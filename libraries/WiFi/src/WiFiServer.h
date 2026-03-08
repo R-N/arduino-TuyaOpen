@@ -8,7 +8,8 @@
 class WiFiServer : public Server {
   private:
     int sockfd;
-    int _accepted_sockfd = -1;
+    volatile int _accepted_sockfd = -1;
+    volatile bool _newClientAvailable = false;
     IPAddress _addr;
     uint16_t _port;
     uint8_t _max_clients;
@@ -16,6 +17,8 @@ class WiFiServer : public Server {
     bool _noDelay = false;
 
   public:
+    using Server::begin;
+
     void listenOnLocalhost(){}
 
     // _addr(INADDR_ANY) is the same as _addr() ==> 0.0.0.0
@@ -26,6 +29,7 @@ class WiFiServer : public Server {
       PR_INFO("WiFiServer::WiFiServer(addr=%s, port=%d, ...)\r\n", addr.toString().c_str(), port);
     }
     ~WiFiServer(){ end();}
+    void startAcceptTask();
     WiFiClient available();
     WiFiClient accept(){return available();}
     void begin( ){ begin(0); };

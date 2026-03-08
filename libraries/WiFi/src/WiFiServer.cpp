@@ -16,8 +16,10 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#include "WiFiServer.h"
+#define LWIP_SOCKET 1
+#define LWIP_POSIX_SOCKETS_IO_NAMES 1
 #include <lwip/sockets.h>
+#include "WiFiServer.h"
 #include <lwip/netdb.h>
 #include "tal_log.h"
 #include "tal_network.h"
@@ -40,27 +42,46 @@ size_t WiFiServer::write(const uint8_t *data, size_t len){
 
 void WiFiServer::stopAll(){}
 
-WiFiClient WiFiServer::available(){
+void WiFiServer::startAcceptTask() {
+  xTaskCreatePinnedToCore(
+      [](void* pvParameters){
+          WiFiServer* server = (WiFiServer*)pvParameters;
+          while(true){
+              int client_sock = tal_net_accept(server->sockfd, NULL, NULL);
+              if(client_sock >= 0){
+                  server->_accepted_sockfd = client_sock;
+                  server->_newClientAvailable = true;
+              }
+              vTaskDelay(10 / portTICK_PERIOD_MS); // small delay
+          }
+      },
+      "WiFiAccept", 4096, this, 1, NULL, 1
+  );
+}
+
+WiFiClient WiFiServer::available() {
   if(!_listening)
-    return WiFiClient();
-  int client_sock;
+      return WiFiClient();
+
+  // Use accepted client if already set
   if (_accepted_sockfd >= 0) {
-    client_sock = _accepted_sockfd;
-    _accepted_sockfd = -1;
+      int client_sock = _accepted_sockfd;
+      _accepted_sockfd = -1;
+      _newClientAvailable = false;
+      return WiFiClient(client_sock);
   }
-  else {
-    client_sock = tal_net_accept(sockfd,NULL,NULL);
-  }
-  if(client_sock >= 0){
-    int val = 1;
-    if(tal_net_setsockopt(client_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&val, sizeof(int)) == 0) {
-      val = _noDelay;
-      if(tal_net_setsockopt(client_sock, IPPROTO_TCP, TCP_NODELAY, (char*)&val, sizeof(int)) == 0){
-        return WiFiClient(client_sock);
+
+  // Non-blocking accept
+  if (_newClientAvailable) {
+      int client_sock = tal_net_accept(sockfd, NULL, NULL); // blocking inside task
+      if (client_sock >= 0) {
+          _accepted_sockfd = client_sock;
+          _newClientAvailable = true;
+          return WiFiClient(client_sock);
       }
-    }
   }
-  return WiFiClient();
+
+  return WiFiClient(); // no client yet
 }
 
 void WiFiServer::begin(uint16_t port){

@@ -11,6 +11,8 @@ class WiFiClientRxBuffer;
 class LwIPClient : public Client
 {
 public:
+    using Client::connect;
+
     virtual int connect(IPAddress ip, uint16_t port, int32_t timeout) = 0;
     virtual int connect(const char *host, uint16_t port, int32_t timeout) = 0;
     virtual int setTimeout(uint32_t seconds) = 0;
@@ -23,6 +25,8 @@ protected:
     std::shared_ptr<WiFiClientRxBuffer> _rxBuffer;
     bool _connected;
     int _timeout;
+    IPAddress _remoteIP;
+    uint16_t _remotePort;
 
 public:
     WiFiClient *next;

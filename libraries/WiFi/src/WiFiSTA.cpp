@@ -11,8 +11,8 @@
 #include "lwip/err.h"
 #include "lwip/dns.h"
 #include "lwip/inet.h"
-#include "FreeRTOS.h"
-#include "event_groups.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
 #include "tal_log.h"
 
 bool WiFiSTAClass::_autoReconnect = true;

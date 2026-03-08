@@ -7,16 +7,17 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
-#include "FreeRTOS.h"
-#include "event_groups.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
 #include "lwip/ip_addr.h"
 #include "lwip/opt.h"
 #include "lwip/err.h"
 #include "lwip/dns.h"
 #include "lwip/err.h"
 #include <vector>
-#include "lwip_netif_address.h"
-#include "net.h"
+#include "lwip/netif.h"
+// #include "esp_netif.h"
+// #include "net.h"
 #include "tal_api.h"
 #include "tkl_wifi.h"
 #include "tal_wifi.h"
@@ -456,8 +457,9 @@ bool WiFiGenericClass::setDualAntennaConfig(uint8_t gpio_ant1, uint8_t gpio_ant2
 
 static void wifi_dns_found_callback(const char *name, const ip_addr_t *ipaddr, void *callback_arg)
 {
-    if(ipaddr) {
-        (*reinterpret_cast<IPAddress*>(callback_arg)) = ipaddr->addr;
+    if(ipaddr && callback_arg) {
+        IPAddress* ipArduino = reinterpret_cast<IPAddress*>(callback_arg);
+        *ipArduino = (uint32_t)ipaddr->u_addr.ip4.addr;
     }
     xEventGroupSetBits(_arduino_event_group, WIFI_DNS_DONE_BIT);
 }
@@ -472,8 +474,8 @@ int WiFiGenericClass::hostByName(const char* aHostname, IPAddress& aResult)
         waitStatusBits(WIFI_DNS_IDLE_BIT, 16000);
         clearStatusBits(WIFI_DNS_IDLE_BIT | WIFI_DNS_DONE_BIT);
         err_t err = dns_gethostbyname(aHostname, &addr, &wifi_dns_found_callback, &aResult);
-        if(err == ERR_OK && addr.addr) {
-            aResult = addr.addr;
+        if(err == ERR_OK && addr.u_addr.ip4.addr != 0) {
+            aResult = (uint32_t)addr.u_addr.ip4.addr;
         } else if(err == ERR_INPROGRESS) {
             waitStatusBits(WIFI_DNS_DONE_BIT, 15000);  
             clearStatusBits(WIFI_DNS_DONE_BIT);
