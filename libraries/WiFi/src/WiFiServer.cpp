@@ -70,20 +70,18 @@ WiFiClient WiFiServer::available(){
     return WiFiClient();
   int client_sock;
   if (_accepted_sockfd >= 0) {
-    client_sock = _accepted_sockfd;
+    int client_sock = _accepted_sockfd;
     _accepted_sockfd = -1;
+    _newClientAvailable = false;
+    return WiFiClient(client_sock);
   }
-  else {
-    client_sock = tal_net_accept(sockfd,NULL,NULL);
-  }
-  if(client_sock >= 0){
-    int val = 1;
-    if(tal_net_setsockopt(client_sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&val, sizeof(int)) == 0) {
-      val = _noDelay;
-      if(tal_net_setsockopt(client_sock, IPPROTO_TCP, TCP_NODELAY, (char*)&val, sizeof(int)) == 0){
-        return WiFiClient(client_sock);
+  if (_newClientAvailable) {
+      int client_sock = tal_net_accept(sockfd, NULL, NULL); // blocking inside task
+      if (client_sock >= 0) {
+          _accepted_sockfd = client_sock;
+          _newClientAvailable = true;
+          return WiFiClient(client_sock);
       }
-    }
   }
   return WiFiClient();
 }
