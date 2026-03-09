@@ -51,38 +51,37 @@ void WiFiServer::startAcceptTask() {
   xTaskCreatePinnedToCore(
       [](void* pvParameters){
           WiFiServer* server = (WiFiServer*)pvParameters;
-          while(true){
+          while (true) {
               int client_sock = tal_net_accept(server->sockfd, NULL, NULL);
-              if(client_sock >= 0){
-                  server->_accepted_sockfd = client_sock;
-                  server->_newClientAvailable = true;
+              if (client_sock >= 0) {
+                  if(server->_accepted_sockfd < 0) {
+                      server->_accepted_sockfd = client_sock;
+                      PR_INFO("Accepted client fd=%d", client_sock);
+                  } else {
+                      tal_net_close(client_sock); // drop extra connections
+                  }
               }
-              vTaskDelay(10 / portTICK_PERIOD_MS); // small delay
+              vTaskDelay(10 / portTICK_PERIOD_MS);
           }
       },
       "WiFiAccept", 4096, this, 1, NULL, 1
   );
 }
+WiFiClient WiFiServer::available() {
+  if (!_listening) return WiFiClient();
 
-
-WiFiClient WiFiServer::available(){
-  if(!_listening)
-    return WiFiClient();
-  int client_sock;
   if (_accepted_sockfd >= 0) {
-    int client_sock = _accepted_sockfd;
-    _accepted_sockfd = -1;
-    _newClientAvailable = false;
-    return WiFiClient(client_sock);
+      int client_sock = _accepted_sockfd;
+      _accepted_sockfd = -1;
+      return WiFiClient(client_sock); // socket is valid
   }
-  if (_newClientAvailable) {
-      int client_sock = tal_net_accept(sockfd, NULL, NULL); // blocking inside task
-      if (client_sock >= 0) {
-          _accepted_sockfd = client_sock;
-          _newClientAvailable = true;
-          return WiFiClient(client_sock);
-      }
+
+  // Non-blocking accept
+  int client_sock = tal_net_accept(sockfd, NULL, NULL);
+  if (client_sock >= 0) {
+      return WiFiClient(client_sock);
   }
+
   return WiFiClient();
 }
 

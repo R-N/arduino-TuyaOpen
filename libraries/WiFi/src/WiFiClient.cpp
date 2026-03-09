@@ -545,7 +545,7 @@ void WiFiClient::flush() {
 
 uint8_t WiFiClient::connected()
 {
-    if (_connected) {
+    if (_connected || fd() >= 0) {
         uint8_t dummy;
         int res = recv(fd(), &dummy, 0, MSG_DONTWAIT);
         // tal_net_set_block(fd(), 0);
