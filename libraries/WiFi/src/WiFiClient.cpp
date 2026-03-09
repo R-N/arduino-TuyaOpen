@@ -30,7 +30,7 @@
 #include <sys/socket.h>
 #define LWIP_SOCKET 1
 #define LWIP_COMPAT_SOCKETS 1
-#undef LWIP_POSIX_SOCKETS_IO_NAMES
+// #undef LWIP_POSIX_SOCKETS_IO_NAMES
 #include <lwip/sockets.h>
 #undef connect
 #undef accept
