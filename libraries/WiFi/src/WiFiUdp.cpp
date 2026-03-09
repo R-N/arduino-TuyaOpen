@@ -17,8 +17,14 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 #define LWIP_SOCKET 1
-#define LWIP_POSIX_SOCKETS_IO_NAMES 1
+#define LWIP_COMPAT_SOCKETS 1
+#undef LWIP_POSIX_SOCKETS_IO_NAMES
 #include <lwip/sockets.h>
+#undef connect
+#undef accept
+#undef read
+#undef write
+
 #include <Arduino.h>
 #include "WiFiUdp.h"
 #include <new>  

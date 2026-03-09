@@ -17,26 +17,33 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-extern "C" {
-    #include <sys/socket.h>
-    #include <netinet/in.h>
-    #include <arpa/inet.h>
-    #include <unistd.h>
-}
-#define LWIP_SOCKET 1
-#define LWIP_POSIX_SOCKETS_IO_NAMES 1
-#include "lwip/sockets.h"
 #include "WiFiClient.h"
 #include "WiFi.h"
-#include <esp_netif.h>
-#include "lwip/netdb.h"
+// extern "C" {
+//     #include <sys/socket.h>
+//     #include <netinet/in.h>
+//     #include <arpa/inet.h>
+//     #include <unistd.h>
+// }
+// #include <esp_netif.h>
+// #include "lwip/netdb.h"
+#include <sys/socket.h>
+#define LWIP_SOCKET 1
+#define LWIP_COMPAT_SOCKETS 1
+#undef LWIP_POSIX_SOCKETS_IO_NAMES
+#include <lwip/sockets.h>
+#undef connect
+#undef accept
+#undef read
+#undef write
+#include <lwip/netdb.h>
 #include <errno.h>
 #include "tal_memory.h"
 #include "tal_log.h"
 #include "tal_network.h"
 #include "tal_log.h"
-#include <string.h>
-#include <arpa/inet.h> // for sockaddr_in, htons, etc.
+// #include <string.h>
+// #include <arpa/inet.h>
 
 #define WIFI_CLIENT_DEF_CONN_TIMEOUT_MS  (3000)
 #define WIFI_CLIENT_MAX_WRITE_RETRY      (10)
@@ -46,46 +53,6 @@ extern "C" {
 #undef connect
 #undef write
 #undef read
-
-// int tal_net_getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
-// {
-//     if(!addr || !addrlen || *addrlen < sizeof(struct sockaddr_in)) {
-//         errno = EINVAL;
-//         return -1;
-//     }
-
-//     memset(addr, 0, sizeof(struct sockaddr_in));
-//     socklen_t len = sizeof(struct sockaddr_in);
-
-//     int res = tal_net_getsockopt(sockfd, SOL_SOCKET, TAL_NET_REMOTE_ADDR, addr, len);
-//     if(res != 0){
-//         errno = res; // tal_net_getsockopt returns TUYA_ERRNO
-//         return -1;
-//     }
-
-//     *addrlen = len;
-//     return 0;
-// }
-
-// int tal_net_getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
-// {
-//     if(!addr || !addrlen || *addrlen < sizeof(struct sockaddr_in)) {
-//         errno = EINVAL;
-//         return -1;
-//     }
-
-//     memset(addr, 0, sizeof(struct sockaddr_in));
-//     socklen_t len = sizeof(struct sockaddr_in);
-
-//     int res = tal_net_getsockopt(sockfd, SOL_SOCKET, TAL_NET_LOCAL_ADDR, addr, &len);
-//     if(res != 0){
-//         errno = res; // tal_net_getsockopt returns TUYA_ERRNO
-//         return -1;
-//     }
-
-//     *addrlen = len;
-//     return 0;
-// }
 
 class WiFiClientRxBuffer {
 private:
@@ -128,9 +95,7 @@ private:
             if(!_buffer || _size <= _fill) {
                 return 0;
             }
-            // int res = recv(_fd, _buffer + _fill, _size - _fill, MSG_DONTWAIT);
-            tal_net_set_block(_fd, 0);
-            int res = tal_net_recv(_fd, _buffer + _fill, _size - _fill);
+            int res = recv(_fd, _buffer + _fill, _size - _fill, MSG_DONTWAIT);
             if(res < 0) {
                 if(errno != EWOULDBLOCK) {
                     _failed = true;
@@ -476,9 +441,9 @@ size_t WiFiClient::write(const uint8_t *buf, size_t size)
         }
 
         if(TAL_FD_ISSET(socketFileDescriptor, &set)) {
-            // res = send(socketFileDescriptor, (void*) buf, bytesRemaining, MSG_DONTWAIT);
-            tal_net_set_block(socketFileDescriptor, 0);
-            res = tal_net_send(socketFileDescriptor, (void*) buf, bytesRemaining);
+            res = send(socketFileDescriptor, (void*) buf, bytesRemaining, MSG_DONTWAIT);
+            // tal_net_set_block(socketFileDescriptor, 0);
+            // res = tal_net_send(socketFileDescriptor, (void*) buf, bytesRemaining);
             if(res > 0) {
                 totalBytesSent += res;
                 if (totalBytesSent >= size) {
@@ -582,9 +547,9 @@ uint8_t WiFiClient::connected()
 {
     if (_connected) {
         uint8_t dummy;
-        // int res = recv(fd(), &dummy, 0, MSG_DONTWAIT);
-        tal_net_set_block(fd(), 0);
-        int res = tal_net_recv(fd(), &dummy, 0);
+        int res = recv(fd(), &dummy, 0, MSG_DONTWAIT);
+        // tal_net_set_block(fd(), 0);
+        // int res = tal_net_recv(fd(), &dummy, 0);
         // avoid unused var warning by gcc
         (void)res;
         // recv only sets errno if res is <= 0
@@ -616,10 +581,10 @@ uint8_t WiFiClient::connected()
 
 IPAddress WiFiClient::remoteIP(int fd) const
 {
-    return _remoteIP;
+    // return _remoteIP;
     struct sockaddr_storage addr;
     socklen_t len = sizeof addr;
-    // getpeername(fd, (struct sockaddr*)&addr, &len);
+    getpeername(fd, (struct sockaddr*)&addr, &len);
     // tal_net_getpeername(fd, (struct sockaddr*)&addr, &len);
     struct sockaddr_in *s = (struct sockaddr_in *)&addr;
     return IPAddress((uint32_t)(s->sin_addr.s_addr));
@@ -627,10 +592,10 @@ IPAddress WiFiClient::remoteIP(int fd) const
 
 uint16_t WiFiClient::remotePort(int fd) const
 {
-    return _remotePort;
+    // return _remotePort;
     struct sockaddr_storage addr;
     socklen_t len = sizeof addr;
-    // getpeername(fd, (struct sockaddr*)&addr, &len);
+    getpeername(fd, (struct sockaddr*)&addr, &len);
     // tal_net_getpeername(fd, (struct sockaddr*)&addr, &len);
     struct sockaddr_in *s = (struct sockaddr_in *)&addr;
     return ntohs(s->sin_port);
@@ -646,28 +611,27 @@ uint16_t WiFiClient::remotePort() const
     return remotePort(fd());
 }
 
-
 IPAddress WiFiClient::localIP(int fd) const
 {
-    // Get the default STA interface
-    esp_netif_t* sta_if = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-    if (!sta_if) return IPAddress((uint32_t)0);
+    // esp_netif_t* sta_if = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    // esp_netif_ip_info_t ipInfo;
+    // if (sta_if && esp_netif_get_ip_info(sta_if, &ipInfo) == ESP_OK) {
+    //     return IPAddress(ipInfo.ip.addr);
+    // }
+    // return IPAddress((uint32_t)0);
 
-    // Get IP info
-    esp_netif_ip_info_t ipInfo;
-    if (esp_netif_get_ip_info(sta_if, &ipInfo) != ESP_OK) {
-        return IPAddress((uint32_t)0);
-    }
-
-    return IPAddress(ipInfo.ip.addr);  // Returns the real DHCP IP
+    struct sockaddr_storage addr = {0};
+    socklen_t len = sizeof addr;
+    getsockname(fd, (struct sockaddr*)&addr, &len);
+    struct sockaddr_in *s = (struct sockaddr_in *)&addr;
+    return IPAddress((uint32_t)(s->sin_addr.s_addr));
 }
 
 uint16_t WiFiClient::localPort(int fd) const
 {
-    return 0;                             // always return port 0
-    struct sockaddr_storage addr = {0};   // zero-initialize
+    struct sockaddr_storage addr = {0};
     socklen_t len = sizeof addr;
-    // getsockname(fd, (struct sockaddr*)&addr, &len);
+    getsockname(fd, (struct sockaddr*)&addr, &len);
     // tal_net_getsockname(fd, (struct sockaddr*)&addr, &len);
     struct sockaddr_in *s = (struct sockaddr_in *)&addr;
     return ntohs(s->sin_port);
