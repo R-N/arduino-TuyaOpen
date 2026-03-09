@@ -5,6 +5,7 @@
 #include "WiFiType.h"
 #include "api/IPAddress.h"
 #include "lwip/ip_addr.h"
+#include "esp_netif.h"
 
 typedef enum {
 	ARDUINO_EVENT_WIFI_READY = 0,
@@ -91,9 +92,9 @@ typedef struct {
     char dns[16];
 } bk_netif_ip_info_t;
 
-typedef struct {              
-    bk_netif_ip_info_t ip_info;    
-} ip_event_got_ip_t;
+// typedef struct {              
+//     bk_netif_ip_info_t ip_info;    
+// } ip_event_got_ip_t;
 
 typedef struct {
     uint8_t ssid[32];                         /**< SSID of target AP. */

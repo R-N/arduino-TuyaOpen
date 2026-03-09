@@ -67,6 +67,8 @@ http_client_status_t HTTPClient::GET(http_client_header_t *headers,uint8_t  head
 {
     /* HTTP headers */
     PR_DEBUG("http request send!");
+    Serial.println(_host.c_str());
+    Serial.println(_path.c_str());
     const http_client_request_t http_request = {
             .host = _host.c_str(),
             .path = _path.c_str(),
@@ -81,6 +83,8 @@ http_client_status_t HTTPClient::GET(http_client_header_t *headers,uint8_t  head
         };
     http_client_status_t http_status = http_client_request(&http_request, response);
     if (HTTP_CLIENT_SUCCESS != http_status) {
+        Serial.print("http_request_send error");
+        Serial.println(http_status);
         PR_ERR("http_request_send error:%d", http_status);
     }
     return http_status;

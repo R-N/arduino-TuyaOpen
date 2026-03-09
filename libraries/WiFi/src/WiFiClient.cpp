@@ -28,6 +28,7 @@ extern "C" {
 #include "lwip/sockets.h"
 #include "WiFiClient.h"
 #include "WiFi.h"
+#include <esp_netif.h>
 #include "lwip/netdb.h"
 #include <errno.h>
 #include "tal_memory.h"
@@ -645,15 +646,20 @@ uint16_t WiFiClient::remotePort() const
     return remotePort(fd());
 }
 
+
 IPAddress WiFiClient::localIP(int fd) const
 {
-    return IPAddress((uint32_t)0);        // always return 0.0.0.0
-    struct sockaddr_storage addr = {0};   // zero-initialize
-    socklen_t len = sizeof addr;
-    // getsockname(fd, (struct sockaddr*)&addr, &len);
-    // tal_net_getsockname(fd, (struct sockaddr*)&addr, &len);
-    struct sockaddr_in *s = (struct sockaddr_in *)&addr;
-    return IPAddress((uint32_t)(s->sin_addr.s_addr));
+    // Get the default STA interface
+    esp_netif_t* sta_if = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+    if (!sta_if) return IPAddress((uint32_t)0);
+
+    // Get IP info
+    esp_netif_ip_info_t ipInfo;
+    if (esp_netif_get_ip_info(sta_if, &ipInfo) != ESP_OK) {
+        return IPAddress((uint32_t)0);
+    }
+
+    return IPAddress(ipInfo.ip.addr);  // Returns the real DHCP IP
 }
 
 uint16_t WiFiClient::localPort(int fd) const
