@@ -61,7 +61,7 @@ void WiFiServer::startAcceptTask() {
                       tal_net_close(client_sock); // drop extra connections
                   }
               }
-              vTaskDelay(10 / portTICK_PERIOD_MS);
+              vTaskDelay(1);
           }
       },
       "WiFiAccept", 4096, this, 1, NULL, 1
@@ -74,12 +74,6 @@ WiFiClient WiFiServer::available() {
       int client_sock = _accepted_sockfd;
       _accepted_sockfd = -1;
       return WiFiClient(client_sock); // socket is valid
-  }
-
-  // Non-blocking accept
-  int client_sock = tal_net_accept(sockfd, NULL, NULL);
-  if (client_sock >= 0) {
-      return WiFiClient(client_sock);
   }
 
   return WiFiClient();
@@ -104,9 +98,9 @@ void WiFiServer::begin(uint16_t port, int enable){
   TUYA_IP_ADDR_T serverIP = (TUYA_IP_ADDR_T)UNI_HTONL(tmpIP);
   if(tal_net_bind(sockfd,serverIP,_port)< 0)
     return;
-  if(tal_net_listen(sockfd , _max_clients) < 0)
+  if(tal_net_listen(sockfd, _max_clients) < 0)
     return;
-  tal_net_set_block(sockfd,false);
+  tal_net_set_block(sockfd, false);
   _listening = true;
   _noDelay = false;
   _accepted_sockfd = -1;
