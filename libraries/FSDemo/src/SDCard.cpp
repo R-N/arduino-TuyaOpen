@@ -29,6 +29,10 @@ FS_SDCARD::~FS_SDCARD() {
     }
 }
 
+bool FS_SDCARD::begin(){
+    return mount();
+}
+
 bool FS_SDCARD::mount(const char* mp) {
     if (ismounted) {
         return true;

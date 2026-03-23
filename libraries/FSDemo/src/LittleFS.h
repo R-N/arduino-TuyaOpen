@@ -16,8 +16,12 @@ extern "C"{
 class FS_LITTLEFS : public FS_API
 {
 public :
-	FS_LITTLEFS();
+    TUYA_FLASH_PARTITION_T partition = {0};
+    FS_LITTLEFS();
     ~FS_LITTLEFS();
+
+    virtual bool begin();
+    virtual bool begin(TUYA_FLASH_PARTITION_T partition);
 
     virtual int mkdir(const char *path);
     virtual int remove(const char *path);
@@ -46,7 +50,7 @@ public :
 
     
 protected:
-    bool ismounted;
+    bool ismounted = false;
 };
 
 

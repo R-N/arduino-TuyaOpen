@@ -10,6 +10,8 @@ class FS_API
 {
 public :
 	FS_API() {}
+	virtual bool begin() = 0;
+	bool begin(TUYA_FLASH_PARTITION_T partition){ return begin(); };
 	virtual int mkdir(const char *path) = 0;
 	virtual int remove(const char *path) = 0;
 	virtual int exist(const char *path) = 0;

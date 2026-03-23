@@ -16,8 +16,12 @@ enum{
 class VFSFILE 
 {
 public :
+	FS_API *impl;
 	VFSFILE(int type);
 	~VFSFILE();
+
+	bool begin();
+	bool begin(TUYA_FLASH_PARTITION_T partition);
 
 	int mkdir(const char *path);
 	int mkdir(const String& path);
@@ -55,8 +59,6 @@ public :
 	int  position(TUYA_FILE fd);
 	int  filesize(const char *filepath);
 
-private : 
-	FS_API *impl;
 };
 
 #endif

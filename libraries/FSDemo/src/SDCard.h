@@ -52,6 +52,8 @@ public:
      */
     ~FS_SDCARD();
 
+    virtual bool begin();
+
     // Directory operations
     virtual int mkdir(const char *path);
     virtual int remove(const char *path);

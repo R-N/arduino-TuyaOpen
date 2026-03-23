@@ -23,6 +23,22 @@ VFSFILE::~VFSFILE()
 	impl = NULL;
 }
 
+bool VFSFILE::begin(){
+	if(impl != NULL)
+	{
+		return impl->begin();
+	}
+	return false;
+}
+
+bool VFSFILE::begin(TUYA_FLASH_PARTITION_T partition){
+	if(impl != NULL)
+	{
+		return impl->begin(partition);
+	}
+	return false;
+}
+
 int VFSFILE:: mkdir(const String& path)
 {
 	return mkdir(path.c_str());

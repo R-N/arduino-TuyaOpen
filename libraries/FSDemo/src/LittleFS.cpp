@@ -1,6 +1,9 @@
 #include "LittleFS.h"
 #include "tal_memory.h"
 
+static int mount(TUYA_FLASH_PARTITION_T partition);
+static int mount();
+
 static lfs_size_t lfs_flash_addr;
 static int user_provided_block_device_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size)
 {
@@ -39,7 +42,35 @@ static int mount()
 {
     TUYA_FLASH_BASE_INFO_T info;
     tkl_flash_get_one_type_info(TUYA_FLASH_TYPE_UF, &info);
-    lfs_flash_addr = info.partition[0].start_addr;
+    Serial.println("===== FLASH INFO =====");
+
+    Serial.print("Partition count: ");
+    Serial.println(info.partition_num);
+    
+    for (int i = 0; i < info.partition_num; i++)
+    {
+        Serial.print("Partition[");
+        Serial.print(i);
+        Serial.println("]:");
+    
+        Serial.print("  start_addr: 0x");
+        Serial.println(info.partition[i].start_addr, HEX);
+    
+        Serial.print("  size: ");
+        Serial.print(info.partition[i].size);
+        Serial.println(" bytes");
+    
+        Serial.print("  block_size: ");
+        Serial.print(info.partition[i].block_size);
+        Serial.println(" bytes");
+    }
+    Serial.println("======================");
+    return mount(info.partition[0]);
+}
+
+static int mount(TUYA_FLASH_PARTITION_T partition){
+    
+    lfs_flash_addr = partition.start_addr;
 
     static struct lfs_config lfs_cfg = {0};
 
@@ -47,13 +78,45 @@ static int mount()
     lfs_cfg.prog = user_provided_block_device_prog;
     lfs_cfg.erase = user_provided_block_device_erase;
     lfs_cfg.sync = user_provided_block_device_sync;
-    lfs_cfg.read_size = info.partition[0].block_size;
-    lfs_cfg.prog_size = info.partition[0].block_size;
-    lfs_cfg.block_size = info.partition[0].block_size;
-    lfs_cfg.block_count = info.partition[0].size / info.partition[0].block_size;
-    lfs_cfg.cache_size = info.partition[0].block_size;
+    lfs_cfg.read_size = partition.block_size;
+    lfs_cfg.prog_size = partition.block_size;
+    lfs_cfg.cache_size = partition.block_size;
+    lfs_cfg.read_size = 16;
+    lfs_cfg.prog_size = 16;
+    lfs_cfg.cache_size = 64;
+    lfs_cfg.block_size = partition.block_size;
+    lfs_cfg.block_count = partition.size / partition.block_size;
     lfs_cfg.lookahead_size = lfs_cfg.block_count / 8 + (8 - (lfs_cfg.block_count / 8));
     lfs_cfg.block_cycles = 500;
+
+    Serial.println("===== LFS CONFIG =====");
+
+    Serial.print("read_size: ");
+    Serial.println(lfs_cfg.read_size);
+    
+    Serial.print("prog_size: ");
+    Serial.println(lfs_cfg.prog_size);
+    
+    Serial.print("block_size: ");
+    Serial.println(lfs_cfg.block_size);
+    
+    Serial.print("block_count: ");
+    Serial.println(lfs_cfg.block_count);
+    
+    Serial.print("cache_size: ");
+    Serial.println(lfs_cfg.cache_size);
+    
+    Serial.print("lookahead_size: ");
+    Serial.println(lfs_cfg.lookahead_size);
+    
+    Serial.print("block_cycles: ");
+    Serial.println(lfs_cfg.block_cycles);
+    
+    Serial.print("flash base: 0x");
+    Serial.println(lfs_flash_addr, HEX);
+    
+    Serial.println("======================");
+
     lfs_t *lfs;
     lfs = tal_lfs_get();
     // mount the filesystem
@@ -61,24 +124,45 @@ static int mount()
 
     // reformat if we can't mount the filesystem
     // this should only happen on the first boot
-    if (err) {
-        lfs_format(lfs, &lfs_cfg);
-        err = lfs_mount(lfs, &lfs_cfg);
-    }
+    if (err < 0) {
+        Serial.print("lfs_mount err: ");
+        Serial.println(err);
 
+        Serial.println("Mount failed, formatting...");
+        lfs_format(lfs, &lfs_cfg);
+    
+        err = lfs_mount(lfs, &lfs_cfg);
+    
+        if (err < 0) {
+            Serial.print("Remount err: ");
+            Serial.println(err);
+        }
+    }
     return err;
 }
 
 FS_LITTLEFS::FS_LITTLEFS()
 {
     ismounted = false;
-    int ret = mount();
-    if(ret >= 0)
-        ismounted = true;
 }
 
 FS_LITTLEFS::~FS_LITTLEFS()
 {
+}
+
+bool FS_LITTLEFS::begin(){
+    if(this->partition.start_addr)
+        ismounted = mount(this->partition) >= 0;
+    else
+        ismounted = mount() >= 0;
+    return ismounted;
+}
+
+bool FS_LITTLEFS::begin(TUYA_FLASH_PARTITION_T partition){
+    this->partition = partition;
+    // return begin();
+    ismounted = mount(this->partition) >= 0;
+    return ismounted;
 }
 
 int createDirRecursive(const char *path) {
