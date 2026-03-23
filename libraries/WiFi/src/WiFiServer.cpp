@@ -47,8 +47,8 @@ size_t WiFiServer::write(const uint8_t *data, size_t len){
 
 void WiFiServer::stopAll(){}
 
-void WiFiServer::startAcceptTask() {
-  xTaskCreatePinnedToCore(
+bool WiFiServer::startAcceptTask() {
+  BaseType_t res = xTaskCreatePinnedToCore(
       [](void* pvParameters){
           WiFiServer* server = (WiFiServer*)pvParameters;
           while (true) {
@@ -61,11 +61,17 @@ void WiFiServer::startAcceptTask() {
                       tal_net_close(client_sock); // drop extra connections
                   }
               }
-              vTaskDelay(1);
+              vTaskDelay(10 / portTICK_PERIOD_MS);
           }
       },
       "WiFiAccept", 4096, this, 1, NULL, 1
   );
+
+  if (res != pdPASS) {
+    Serial.println("Failed to create WiFiAccept task");
+    return false;
+  }
+  return true;
 }
 WiFiClient WiFiServer::available() {
   if (!_listening) return WiFiClient();
@@ -75,35 +81,42 @@ WiFiClient WiFiServer::available() {
       _accepted_sockfd = -1;
       return WiFiClient(client_sock); // socket is valid
   }
+  // Non-blocking accept
+  // int client_sock = tal_net_accept(sockfd, NULL, NULL);
+  // if (client_sock >= 0) {
+  //     return WiFiClient(client_sock);
+  // }
 
   return WiFiClient();
 }
 
-void WiFiServer::begin(uint16_t port){
+bool WiFiServer::begin(uint16_t port){
     begin(port, 1);
+    return startAcceptTask();
 }
 
-void WiFiServer::begin(uint16_t port, int enable){
+bool WiFiServer::begin(uint16_t port, int enable){
   if(_listening)
-    return;
+    return true;
   if(port){
       _port = port;
   }
   sockfd = tal_net_socket_create(PROTOCOL_TCP);
   if (sockfd < 0)
-    return;
+    return false;
 
   tal_net_setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int));
   uint32_t tmpIP = static_cast<uint32_t>(_addr);
   TUYA_IP_ADDR_T serverIP = (TUYA_IP_ADDR_T)UNI_HTONL(tmpIP);
   if(tal_net_bind(sockfd,serverIP,_port)< 0)
-    return;
+    return false;
   if(tal_net_listen(sockfd, _max_clients) < 0)
-    return;
+    return false;
   tal_net_set_block(sockfd, false);
   _listening = true;
   _noDelay = false;
   _accepted_sockfd = -1;
+  return startAcceptTask();
 }
 
 void WiFiServer::setNoDelay(bool nodelay) {

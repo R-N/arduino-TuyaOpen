@@ -8,7 +8,9 @@
  *
  */
 
+#ifndef SDCARD_DISABLED
 #include "SDCard.h"
+#include "tkl_fs.h"
 
 FS_SDCARD::FS_SDCARD() : ismounted(false) {
     strcpy(mount_point, "/sdcard");
@@ -304,3 +306,5 @@ int FS_SDCARD::filesize(const char *filepath) {
     String fullPath = getFullPath(filepath);
     return tkl_fgetsize(fullPath.c_str());
 }
+
+#endif

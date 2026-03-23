@@ -11,6 +11,8 @@
 #ifndef _SDCARD_H_
 #define _SDCARD_H_
 
+#ifndef SDCARD_DISABLED
+
 #include <Arduino.h>
 #include "fs_api.h"
 
@@ -121,5 +123,7 @@ protected:
      */
     String getFullPath(const char* path);
 };
+
+#endif
 
 #endif // _SDCARD_H_

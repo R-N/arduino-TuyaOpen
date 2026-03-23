@@ -8,9 +8,16 @@ from .chip_info import *
 OFFSET_START = 0x0
 OFFSET_BOOTLOADER = 0x1000
 OFFSET_PARTITIONS = 0x8000
-OFFSET_OTA_DATA_INITIAL = 0xd000
+# OFFSET_OTA_DATA_INITIAL = 0xd000
+OFFSET_OTA_DATA_INITIAL = 0xE000
 OFFSET_APPLICATION = 0x10000
-OFFSET_END = 0x190000
+OFFSET_SPIFFS = 0x290000
+OFFSET_COREDUMP = 0x3F0000
+# OFFSET_END = 0x190000
+OFFSET_END = 0x400000
+
+SPIFFS_SIZE = 0x160000
+COREDUMP_SIZE = 0x10000
 
 def esp32_image_gen(chip_info):
     bin_path_bootloader = os.path.join(chip_info.tools_path, "bootloader.bin")
@@ -47,14 +54,36 @@ def esp32_image_gen(chip_info):
     with open(chip_info.bin_file_QIO, 'wb') as bin_out:
         cur_offset = OFFSET_START
         for name, offset, bin_in in bin_files_in:
+            if offset < cur_offset:
+                logging.error(f"{name} overlaps previous region!")
+                return False
+
             bin_out.write(b'\xff' * (offset - cur_offset))
             cur_offset = offset
             with open(bin_in, 'rb') as bin_in:
                 data = bin_in.read()
                 bin_out.write(data)
                 cur_offset += len(data)
-        offset = OFFSET_END
-        bin_out.write(b'\xff' * (offset - cur_offset))
+
+        # Fill until SPIFFS
+        if cur_offset < OFFSET_SPIFFS:
+            bin_out.write(b'\xff' * (OFFSET_SPIFFS - cur_offset))
+            cur_offset = OFFSET_SPIFFS
+
+        # Skip SPIFFS + coredump in one go
+        end_of_coredump = OFFSET_COREDUMP + COREDUMP_SIZE
+
+        if cur_offset < end_of_coredump:
+            bin_out.write(b'\xff' * (end_of_coredump - cur_offset))
+            cur_offset = end_of_coredump
+
+        if OFFSET_END < cur_offset:
+            logging.error("Final binary exceeds flash size!")
+            return False
+
+        # offset = OFFSET_END
+        # bin_out.write(b'\xff' * (offset - cur_offset))
+        bin_out.write(b'\xff' * (OFFSET_END - cur_offset))
         logging.debug(f"ESP32 QIO binary: {chip_info.bin_file_QIO}")
         logging.debug("package success.")
     
