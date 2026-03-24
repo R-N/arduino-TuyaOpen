@@ -10,18 +10,18 @@ OFFSET_BOOTLOADER = 0x1000
 OFFSET_PARTITIONS = 0x8000
 # OFFSET_OTA_DATA_INITIAL = 0xd000
 OFFSET_OTA_DATA_INITIAL = 0xE000
-OFFSET_APPLICATION = 0x10000
-OFFSET_SPIFFS = 0x290000
+OFFSET_APPLICATION = 0x20000
+OFFSET_SPIFFS = 0x26C000
 OFFSET_COREDUMP = 0x3F0000
 # OFFSET_END = 0x190000
 OFFSET_END = 0x400000
 
-SPIFFS_SIZE = 0x160000
+SPIFFS_SIZE = 0x134000
 COREDUMP_SIZE = 0x10000
 
 def esp32_image_gen(chip_info):
     bin_path_bootloader = os.path.join(chip_info.tools_path, "bootloader.bin")
-    bin_path_partitions_table = os.path.join(chip_info.tools_path, "partition-table.bin")
+    bin_path_partitions_table = os.path.join(chip_info.tools_path, "partitions.bin")
     bin_path_ota_data_init = os.path.join(chip_info.tools_path, "ota_data_initial.bin")
     bin_path_app = os.path.join(chip_info.output_path, f"{chip_info.sketch_name}_app.bin")
 
@@ -70,9 +70,13 @@ def esp32_image_gen(chip_info):
             bin_out.write(b'\xff' * (OFFSET_SPIFFS - cur_offset))
             cur_offset = OFFSET_SPIFFS
 
-        # Skip SPIFFS + coredump in one go
+        # Jump over SPIFFS without writing
+        # end_of_spiffs = OFFSET_SPIFFS + SPIFFS_SIZE
+        # if cur_offset < end_of_spiffs:
+        #     cur_offset = end_of_spiffs
+            
+        # Fill until end of coredump
         end_of_coredump = OFFSET_COREDUMP + COREDUMP_SIZE
-
         if cur_offset < end_of_coredump:
             bin_out.write(b'\xff' * (end_of_coredump - cur_offset))
             cur_offset = end_of_coredump
@@ -112,6 +116,7 @@ def get_qio_binary_esp32(chip_info):
     logging.info("[NOTE]:")
     logging.info("====================[ BUILD SUCCESS ]====================")
     logging.info(f" Target    : {qio_bin_name}")
+    logging.info(f" Tools     : {chip_info.tools_path}")
     logging.info(f" Output    : {chip_info.output_path}")
     logging.info(f" Chip      : {chip_info.chip}")
     logging.info(f" Board     : {chip_info.board}")

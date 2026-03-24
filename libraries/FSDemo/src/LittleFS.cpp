@@ -1,5 +1,9 @@
 #include "LittleFS.h"
 #include "tal_memory.h"
+#include <esp_partition.h>
+#include <esp_err.h>
+#include <esp_log.h>
+#include <esp_flash_partitions.h>
 
 static int mount(TUYA_FLASH_PARTITION_T partition);
 static int mount();
@@ -9,6 +13,12 @@ static int user_provided_block_device_read(const struct lfs_config *c, lfs_block
 {
     OPERATE_RET ret = tkl_flash_read(lfs_flash_addr + c->block_size * block + off, (uint8_t*)buffer, size);
     if (OPRT_OK != ret) {
+        Serial.println("user_provided_block_device_read");
+        Serial.print("  block: "); Serial.println(block);
+        Serial.print("  offset: "); Serial.println(off);
+        Serial.print("  lfs_flash_addr: 0x"); Serial.println(lfs_flash_addr, HEX);
+        Serial.print("  address: 0x"); Serial.println(lfs_flash_addr + c->block_size * block + off, HEX);
+        Serial.print("  size: "); Serial.println(size);
         return LFS_ERR_IO;
     }
     return LFS_ERR_OK;
@@ -18,6 +28,7 @@ static int user_provided_block_device_prog(const struct lfs_config *c, lfs_block
 {
     OPERATE_RET ret = tkl_flash_write(lfs_flash_addr + c->block_size * block + off, (uint8_t*)buffer, size);
     if (OPRT_OK != ret) {
+        Serial.println("user_provided_block_device_prog");
         return LFS_ERR_IO;
     }
     return LFS_ERR_OK;
@@ -27,6 +38,7 @@ static int user_provided_block_device_erase(const struct lfs_config *c, lfs_bloc
 {
     OPERATE_RET ret = tkl_flash_erase(lfs_flash_addr + c->block_size * block, c->block_size);
     if (OPRT_OK != ret) {
+        Serial.println("user_provided_block_device_erase");
         return LFS_ERR_IO;
     }
     return LFS_ERR_OK;
@@ -81,9 +93,9 @@ static int mount(TUYA_FLASH_PARTITION_T partition){
     lfs_cfg.read_size = partition.block_size;
     lfs_cfg.prog_size = partition.block_size;
     lfs_cfg.cache_size = partition.block_size;
-    lfs_cfg.read_size = 16;
-    lfs_cfg.prog_size = 16;
-    lfs_cfg.cache_size = 64;
+    // lfs_cfg.read_size = 16;
+    // lfs_cfg.prog_size = 16;
+    // lfs_cfg.cache_size = 64;
     lfs_cfg.block_size = partition.block_size;
     lfs_cfg.block_count = partition.size / partition.block_size;
     lfs_cfg.lookahead_size = lfs_cfg.block_count / 8 + (8 - (lfs_cfg.block_count / 8));
@@ -128,15 +140,15 @@ static int mount(TUYA_FLASH_PARTITION_T partition){
         Serial.print("lfs_mount err: ");
         Serial.println(err);
 
-        Serial.println("Mount failed, formatting...");
-        lfs_format(lfs, &lfs_cfg);
+        // Serial.println("Mount failed, formatting...");
+    //     lfs_format(lfs, &lfs_cfg);
     
-        err = lfs_mount(lfs, &lfs_cfg);
+    //     err = lfs_mount(lfs, &lfs_cfg);
     
-        if (err < 0) {
-            Serial.print("Remount err: ");
-            Serial.println(err);
-        }
+    //     if (err < 0) {
+    //         Serial.print("Remount err: ");
+    //         Serial.println(err);
+    //     }
     }
     return err;
 }
