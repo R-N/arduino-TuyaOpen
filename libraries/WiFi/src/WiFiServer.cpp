@@ -26,8 +26,9 @@
 #undef write
 #include "WiFiServer.h"
 #include <lwip/netdb.h>
-#include "tal_log.h"
 #include "tal_network.h"
+#include "esp_log.h"
+#include "StaticQueue.h"
 
 #undef write
 #undef close
@@ -52,14 +53,21 @@ bool WiFiServer::startAcceptTask() {
       [](void* pvParameters){
           WiFiServer* server = (WiFiServer*)pvParameters;
           while (true) {
-              int client_sock = tal_net_accept(server->sockfd, NULL, NULL);
-              if (client_sock >= 0) {
-                  if(server->_accepted_sockfd < 0) {
-                      server->_accepted_sockfd = client_sock;
-                      PR_INFO("Accepted client fd=%d", client_sock);
-                  } else {
-                      tal_net_close(client_sock); // drop extra connections
-                  }
+              if (!server->sockQueue.isFull()){
+                int client_sock = tal_net_accept(server->sockfd, NULL, NULL);
+                if (client_sock >= 0) {
+                    if(!server->sockQueue.isFull()) {
+                        if(!server->sockQueue.enqueue(client_sock)){
+                          Serial.print("Failed to enqueue ");
+                          Serial.println(client_sock);
+                          continue;
+                        }
+                        ESP_LOGI("WS", "Accepted client fd=%d", client_sock);
+                    } else {
+                        tal_net_close(client_sock); 
+                        ESP_LOGI("WS", "Dropped client fd=%d", client_sock);
+                    }
+                }
               }
               vTaskDelay(10 / portTICK_PERIOD_MS);
           }
@@ -76,9 +84,13 @@ bool WiFiServer::startAcceptTask() {
 WiFiClient WiFiServer::available() {
   if (!_listening) return WiFiClient();
 
-  if (_accepted_sockfd >= 0) {
-      int client_sock = _accepted_sockfd;
-      _accepted_sockfd = -1;
+  int client_sock;
+  while (!sockQueue.isEmpty()) {
+      if(!sockQueue.dequeue(client_sock)){
+        Serial.print("Failed to dequeue ");
+        Serial.println(client_sock);
+        continue;
+      }
       return WiFiClient(client_sock); // socket is valid
   }
   // Non-blocking accept
@@ -115,7 +127,6 @@ bool WiFiServer::begin(uint16_t port, int enable){
   tal_net_set_block(sockfd, false);
   _listening = true;
   _noDelay = false;
-  _accepted_sockfd = -1;
   return startAcceptTask();
 }
 
@@ -128,11 +139,15 @@ bool WiFiServer::getNoDelay() {
 }
 
 bool WiFiServer::hasClient() {
-    if (_accepted_sockfd >= 0) {
+    if (!sockQueue.isEmpty()) {
       return true;
     }
-    _accepted_sockfd = tal_net_accept(sockfd,NULL,NULL);
-    if (_accepted_sockfd >= 0) {
+    int client_sock = tal_net_accept(sockfd, NULL, NULL);
+    if (client_sock >= 0) {
+      if(!sockQueue.enqueue(client_sock)){
+        Serial.print("Failed to enqueue ");
+        Serial.println(client_sock);
+      }
       return true;
     }
     return false;

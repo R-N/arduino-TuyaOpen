@@ -5,6 +5,10 @@
 #include "WiFiClient.h"
 #include "api/IPAddress.h"
 #include "tal_log.h"
+#include "StaticQueue.h"
+
+#define MAX_SOCKET_QUEUE 32
+
 class WiFiServer : public Server {
   private:
     volatile bool _newClientAvailable = false;
@@ -16,16 +20,16 @@ class WiFiServer : public Server {
 
   public:
     int sockfd;
-    volatile int _accepted_sockfd = -1;
+    StaticQueue<int, MAX_SOCKET_QUEUE> sockQueue;
     using Server::begin;
 
     void listenOnLocalhost(){}
 
     // _addr(INADDR_ANY) is the same as _addr() ==> 0.0.0.0
-    WiFiServer(uint16_t port=80, uint8_t max_clients=4):_addr(),_port(port),_max_clients(max_clients),_listening(false),_noDelay(false),sockfd(-1),_accepted_sockfd(-1) {
+    WiFiServer(uint16_t port=80, uint8_t max_clients=4):_addr(),_port(port),_max_clients(max_clients),_listening(false),_noDelay(false),sockfd(-1) {
       PR_INFO("WiFiServer::WiFiServer(port=%d, ...)\r\n", port);
     }
-    WiFiServer(const IPAddress& addr, uint16_t port=80, uint8_t max_clients=4):_addr(addr),_port(port),_max_clients(max_clients),_listening(false),_noDelay(false),sockfd(-1),_accepted_sockfd(-1) {
+    WiFiServer(const IPAddress& addr, uint16_t port=80, uint8_t max_clients=4):_addr(addr),_port(port),_max_clients(max_clients),_listening(false),_noDelay(false),sockfd(-1) {
       PR_INFO("WiFiServer::WiFiServer(addr=%s, port=%d, ...)\r\n", addr.toString().c_str(), port);
     }
     ~WiFiServer(){ end();}
