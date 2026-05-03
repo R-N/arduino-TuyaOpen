@@ -1,11 +1,14 @@
 #pragma once
 
+#ifndef STATIC_QUEUE
+#define STATIC_QUEUE
+
 template<typename T, int N>
 class StaticQueue {
 public:
     StaticQueue();
 
-    bool enqueue(const T& item);
+    bool enqueue(const T& item, bool force=false);
     bool dequeue(T& out);
     bool peek(T& out) const;
 
@@ -16,6 +19,7 @@ public:
     bool isFull() const;
     int  size() const;
     int  capacity() const;
+    const T& at(int index) const;
 
     void clear();
 
@@ -27,3 +31,5 @@ private:
 };
 
 #include "StaticQueue.tpp"
+
+#endif

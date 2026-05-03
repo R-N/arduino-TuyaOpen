@@ -6,8 +6,13 @@ StaticQueue<T, N>::StaticQueue()
     : head(0), tail(0), count(0) {}
 
 template<typename T, int N>
-bool StaticQueue<T, N>::enqueue(const T& item) {
-    if (isFull()) return false;
+bool StaticQueue<T, N>::enqueue(const T& item, bool force) {
+    if (isFull()){
+        if (!force) return false;
+        // overwrite oldest
+        head = (head + 1) % N;
+        count--;
+    } 
 
     buffer[tail] = item;
     tail = (tail + 1) % N;
@@ -70,4 +75,8 @@ int StaticQueue<T, N>::capacity() const {
 template<typename T, int N>
 void StaticQueue<T, N>::clear() {
     head = tail = count = 0;
+}
+template<typename T, int N>
+const T& StaticQueue<T, N>::at(int index) const {
+    return buffer[(head + index) % N];
 }
