@@ -139,7 +139,7 @@ jobs:
           foreach ($sketch in $sketches) {
             $i++
             echo "[$i/$total] Compiling: $sketch"
-            arduino-cli compile --fqbn $fqbn $sketch
+            arduino-cli compile --clean --fqbn $fqbn $sketch
             if ($LASTEXITCODE -ne 0) {
               $failed += $sketch
               echo "::error::Compilation failed: $sketch"
