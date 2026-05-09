@@ -2033,31 +2033,31 @@
           "systems": [
             {
               "host": "x86_64-linux-gnu",
-              "url": "https://images.tuyacn.com/rms-static/79bddc30-4b87-11f1-95db-cfd3b8132c07-1778318066035.tar.bz2?tyName=vendor-esp32-0.0.6.tar.bz2",
+              "url": "https://images.tuyacn.com/rms-static/f039a2d0-4b97-11f1-95db-cfd3b8132c07-1778325136765.tar.bz2?tyName=vendor-esp32-0.0.6.tar.bz2",
               "archiveFileName": "vendor-esp32-0.0.6.tar.bz2",
-              "size": "202792065",
-              "checksum": "SHA-256:a81da31c052d3a6ba984e08f9c01193c4889fc78fb31db687ca2dfbe718af83d"
+              "size": "202773670",
+              "checksum": "SHA-256:4b8997143a664cf23b436f119e32bc087b7284b9e525835eb2821cd5395f6f85"
             },
             {
               "host": "x86_64-cygwin",
-              "url": "https://images.tuyacn.com/rms-static/79bddc30-4b87-11f1-95db-cfd3b8132c07-1778318066035.tar.bz2?tyName=vendor-esp32-0.0.6.tar.bz2",
+              "url": "https://images.tuyacn.com/rms-static/f039a2d0-4b97-11f1-95db-cfd3b8132c07-1778325136765.tar.bz2?tyName=vendor-esp32-0.0.6.tar.bz2",
               "archiveFileName": "vendor-esp32-0.0.6.tar.bz2",
-              "size": "202792065",
-              "checksum": "SHA-256:a81da31c052d3a6ba984e08f9c01193c4889fc78fb31db687ca2dfbe718af83d"
+              "size": "202773670",
+              "checksum": "SHA-256:4b8997143a664cf23b436f119e32bc087b7284b9e525835eb2821cd5395f6f85"
             },
             {
               "host": "arm64-apple-darwin",
-              "url": "https://images.tuyacn.com/rms-static/79bddc30-4b87-11f1-95db-cfd3b8132c07-1778318066035.tar.bz2?tyName=vendor-esp32-0.0.6.tar.bz2",
+              "url": "https://images.tuyacn.com/rms-static/f039a2d0-4b97-11f1-95db-cfd3b8132c07-1778325136765.tar.bz2?tyName=vendor-esp32-0.0.6.tar.bz2",
               "archiveFileName": "vendor-esp32-0.0.6.tar.bz2",
-              "size": "202792065",
-              "checksum": "SHA-256:a81da31c052d3a6ba984e08f9c01193c4889fc78fb31db687ca2dfbe718af83d"
+              "size": "202773670",
+              "checksum": "SHA-256:4b8997143a664cf23b436f119e32bc087b7284b9e525835eb2821cd5395f6f85"
             },
             {
               "host": "x86_64-apple-darwin",
-              "url": "https://images.tuyacn.com/rms-static/79bddc30-4b87-11f1-95db-cfd3b8132c07-1778318066035.tar.bz2?tyName=vendor-esp32-0.0.6.tar.bz2",
+              "url": "https://images.tuyacn.com/rms-static/f039a2d0-4b97-11f1-95db-cfd3b8132c07-1778325136765.tar.bz2?tyName=vendor-esp32-0.0.6.tar.bz2",
               "archiveFileName": "vendor-esp32-0.0.6.tar.bz2",
-              "size": "202792065",
-              "checksum": "SHA-256:a81da31c052d3a6ba984e08f9c01193c4889fc78fb31db687ca2dfbe718af83d"
+              "size": "202773670",
+              "checksum": "SHA-256:4b8997143a664cf23b436f119e32bc087b7284b9e525835eb2821cd5395f6f85"
             }
           ]
         },
