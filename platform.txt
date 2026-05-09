@@ -8,6 +8,10 @@ version=1.2.1
 recipe.hooks.prebuild.1.pattern="{runtime.tools.env-python.path}/python3" -I "{runtime.platform.path}/tools/prebuild.py" --chip "{build.chip}" --sketch-path "{sketch_path}" --build-path "{build.path}"
 recipe.hooks.prebuild.1.pattern.windows="{runtime.tools.env-python.path}/python.exe" -I "{runtime.platform.path}/tools/prebuild.py" --chip "{build.chip}" --sketch-path "{sketch_path}" --build-path "{build.path}"
 
+## Preprocess sketches
+preproc.macros.flags=-w -x c++ -E -CC
+recipe.preproc.macros="{compiler.cmd.cpp}" {compiler.flags.cpp} {preproc.macros.flags} {appBuild.flags} -DARDUINO={runtime.ide.version} -DARDUINO_{build.board} -DARDUINO_CHIP_{build.chip} -DBOARD_NAME="{build.board}" {compiler.includes} {includes} "{source_file}" -o "{preprocessed_file_path}"
+
 ## Compile c files
 recipe.c.o.pattern="{compiler.cmd.c}" {compiler.flags.c} {appBuild.flags} -DARDUINO={runtime.ide.version} -DARDUINO_{build.board} -DARDUINO_CHIP_{build.chip} -DBOARD_NAME="{build.board}" {compiler.includes} {includes} {source_file} -o {object_file}
 

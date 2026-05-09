@@ -14,6 +14,9 @@ on:
         default: ''
         type: string
 
+env:
+  ARDUINO_CLI_VERSION: "1.2.2"
+
 jobs:
   # Job 1: Determine boards and sketches to compile (Windows)
   get-boards:
@@ -76,7 +79,8 @@ jobs:
 
       - name: Setup arduino-cli
         run: |
-          Invoke-WebRequest -Uri "https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Windows_64bit.zip" -OutFile "arduino-cli.zip"
+          $cliVersion = $env:ARDUINO_CLI_VERSION
+          Invoke-WebRequest -Uri "https://downloads.arduino.cc/arduino-cli/arduino-cli_${cliVersion}_Windows_64bit.zip" -OutFile "arduino-cli.zip"
           Expand-Archive -Path "arduino-cli.zip" -DestinationPath "$env:USERPROFILE\arduino-cli"
           echo "$env:USERPROFILE\arduino-cli" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
         shell: pwsh
@@ -110,7 +114,8 @@ jobs:
 
       - name: Setup arduino-cli
         run: |
-          Invoke-WebRequest -Uri "https://downloads.arduino.cc/arduino-cli/arduino-cli_latest_Windows_64bit.zip" -OutFile "arduino-cli.zip"
+          $cliVersion = $env:ARDUINO_CLI_VERSION
+          Invoke-WebRequest -Uri "https://downloads.arduino.cc/arduino-cli/arduino-cli_${cliVersion}_Windows_64bit.zip" -OutFile "arduino-cli.zip"
           Expand-Archive -Path "arduino-cli.zip" -DestinationPath "$env:USERPROFILE\arduino-cli"
           echo "$env:USERPROFILE\arduino-cli" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
         shell: pwsh
