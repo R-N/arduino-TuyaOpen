@@ -1,0 +1,72 @@
+{
+  "package": {
+    "name": "arduino_tuya_open",
+    "versionFrom": "release_tag",
+    "githubOwner": "tuya",
+    "githubRepo": "arduino-TuyaOpen",
+    "globalReleaseTag": "global",
+    "indexAssetName": "package_tuya_open_index.json"
+  },
+  "platforms": {
+    "t2": {
+      "enabled": false,
+      "toolName": "vendor-t2",
+      "boardName": "t2",
+      "chip": "t2",
+      "version": "1.0.2",
+      "sourceRepo": "https://github.com/tuya/tuyaopen.git",
+      "sourceBranch": "master",
+      "buildApp": "apps/tuya_cloud/switch_demo",
+      "archiveType": "tar.bz2",
+      "dataAsset": "ci-data-t2.tar.gz"
+    },
+    "t3": {
+      "enabled": false,
+      "toolName": "vendor-t3",
+      "boardName": "t3",
+      "chip": "t3",
+      "version": "0.0.4",
+      "sourceRepo": "https://github.com/tuya/tuyaopen.git",
+      "sourceBranch": "master",
+      "buildApp": "apps/tuya_cloud/switch_demo",
+      "archiveType": "tar.bz2",
+      "dataAsset": "ci-data-t3.tar.gz"
+    },
+    "t5": {
+      "enabled": true,
+      "toolName": "vendor-T5",
+      "boardName": "t5",
+      "chip": "T5AI",
+      "version": "0.0.9",
+      "sourceRepo": "https://github.com/tuya/TuyaOpen.git",
+      "sourceBranch": "master",
+      "buildApp": "apps/tuya.ai/your_chat_bot",
+      "archiveType": "tar.bz2",
+      "dataAsset": "ci-data-t5.tar.gz"
+    },
+    "ln882h": {
+      "enabled": false,
+      "toolName": "vendor-ln882h",
+      "boardName": "ln882h",
+      "chip": "ln882h",
+      "version": "0.0.2",
+      "sourceRepo": "https://github.com/tuya/tuyaopen.git",
+      "sourceBranch": "master",
+      "buildApp": "apps/tuya_cloud/switch_demo",
+      "archiveType": "tar.bz2",
+      "dataAsset": "ci-data-ln882h.tar.gz"
+    },
+    "esp32": {
+      "enabled": false,
+      "toolName": "vendor-esp32",
+      "boardName": "esp32",
+      "chip": "esp32",
+      "version": "0.0.6",
+      "sourceRepo": "https://github.com/tuya/tuyaopen.git",
+      "sourceBranch": "master",
+      "buildApp": "apps/tuya_cloud/switch_demo",
+      "archiveType": "tar.bz2",
+      "dataAsset": "ci-data-esp32.tar.gz"
+    }
+  }
+}
