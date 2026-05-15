@@ -162,26 +162,6 @@ jobs:
           sudo apt-get install -y -qq python3-venv > /dev/null
           pip install -q -r tools/ci/requirements.txt
 
-      - name: Download platform data from global release
-        run: |
-          OWNER=$(jq -r '.package.githubOwner' tools/ci/package-config.json)
-          REPO=$(jq -r '.package.githubRepo' tools/ci/package-config.json)
-          GLOBAL_TAG=$(jq -r '.package.globalReleaseTag' tools/ci/package-config.json)
-          ASSET=$(jq -r --arg p "${{ matrix.platform }}" '.platforms[$p].dataAsset' tools/ci/package-config.json)
-
-          echo "Downloading ${ASSET}..."
-          gh release download "$GLOBAL_TAG" \
-            --repo "${OWNER}/${REPO}" \
-            --pattern "$ASSET" \
-            --output "$ASSET" \
-            --clobber
-
-          mkdir -p tools/ci/data/${{ matrix.platform }}
-          tar xzf "$ASSET" -C tools/ci/data/${{ matrix.platform }}
-          echo "Extracted ${ASSET}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Cache tuyaopen clone
         uses: actions/cache@v5
         with:
@@ -207,26 +187,6 @@ jobs:
             output/${{ matrix.toolName }}-*.tar.bz2
             output/manifest.json
           retention-days: 3
-
-      - name: Update ci-data on global release
-        if: matrix.platform == 't5'
-        run: |
-          OWNER=$(jq -r '.package.githubOwner' tools/ci/package-config.json)
-          REPO=$(jq -r '.package.githubRepo' tools/ci/package-config.json)
-          GLOBAL_TAG=$(jq -r '.package.globalReleaseTag' tools/ci/package-config.json)
-          ASSET=$(jq -r --arg p "${{ matrix.platform }}" '.platforms[$p].dataAsset' tools/ci/package-config.json)
-
-          echo "Re-packaging ci-data for ${{ matrix.platform }}..."
-          tar czf "$ASSET" -C tools/ci/data/${{ matrix.platform }} .
-
-          echo "Uploading ${ASSET} to global release..."
-          gh release upload "$GLOBAL_TAG" \
-            --repo "${OWNER}/${REPO}" \
-            "$ASSET" \
-            --clobber
-          echo "ci-data updated for ${{ matrix.platform }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ============================================================
   # Stage 4: Upload all artifacts to the Release
