@@ -62,6 +62,19 @@ def _version_update(arduino_path, version):
     logging.info(f"Updated platform.txt version to {version}")
 
 
+def _ignore_patterns(checkout_path):
+    base_ignore = shutil.ignore_patterns(".git", "output")
+    ci_data_path = os.path.normpath(os.path.join(checkout_path, "tools", "ci", "data"))
+
+    def _ignore(directory, contents):
+        ignored = base_ignore(directory, contents)
+        if os.path.normpath(directory) == ci_data_path:
+            ignored = set(contents)
+        return ignored
+
+    return _ignore
+
+
 def package_arduino(checkout_path, version, output_path):
     """Package the Arduino core from a checked-out repository.
 
@@ -83,7 +96,7 @@ def package_arduino(checkout_path, version, output_path):
         tmp_output_path = os.path.join(compress_path, "tuya_open")
 
         shutil.copytree(checkout_path, tmp_output_path,
-                        ignore=shutil.ignore_patterns(".git", "output"))
+                        ignore=_ignore_patterns(checkout_path))
 
         _version_update(tmp_output_path, version)
 

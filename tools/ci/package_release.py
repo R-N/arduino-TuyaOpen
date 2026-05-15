@@ -27,7 +27,6 @@ from packager.package_platform_t3 import PackagePlatformT3
 from packager.package_platform_t5 import PackagePlatformT5
 from packager.package_platform_ln882h import PackagePlatformLn882h
 from packager.package_platform_esp32 import PackagePlatformEsp32
-from manage_data import download_platform, load_config as load_data_config
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 CONFIG_PATH = os.path.join(SCRIPT_DIR, "package-config.json")
@@ -66,11 +65,8 @@ def build_vendor(platform_key, platform_config, output_path):
 
     data_path = os.path.join(SCRIPT_DIR, "data", platform_key)
     if not os.path.exists(data_path):
-        logging.info(f"Data not found locally, downloading from release...")
-        config_for_download = load_data_config()
-        if not download_platform(config_for_download, platform_key):
-            logging.error(f"Failed to download data for {platform_key}")
-            return None
+        logging.error(f"Data directory not found: {data_path}")
+        return None
 
     info = PackageInfo(
         name=platform_config["toolName"],

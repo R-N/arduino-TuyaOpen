@@ -1,0 +1,27 @@
+-c
+-g
+-mcpu=cortex-m4
+-mthumb -mabi=aapcs
+-march=armv7e-m+fp
+-mfpu=fpv4-sp-d16
+-mfloat-abi=hard
+-Wall -Wextra
+-Wimplicit-function-declaration
+-Wdouble-promotion
+-Wfloat-conversion
+-ffunction-sections
+-fdata-sections
+-fno-strict-aliasing
+-O1
+-D NDEBUG
+-u _printf_float
+-u _scanf_float
+-Wl,--gc-sections
+-Wno-enum-conversion
+-fsigned-char
+-Wunknown-pragmas
+-Wno-unused-function
+-Wno-unused-but-set-variable
+-Wno-unused-parameter
+-Wno-unused-variable
+-Wno-sign-compare

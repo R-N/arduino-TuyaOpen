@@ -61,38 +61,6 @@ echo "  Target:  $TARGET"
 echo "  Output:  $SCRIPT_DIR/output"
 echo ""
 
-# --- Download ci-data if needed ---
-download_data() {
-    local platform="$1"
-    local data_dir="$SCRIPT_DIR/data/$platform"
-
-    if [ -d "$data_dir" ] && [ "$(ls -A "$data_dir" 2>/dev/null)" ]; then
-        return 0
-    fi
-
-    echo "Downloading ci-data for $platform..."
-    python3 "$SCRIPT_DIR/manage_data.py" download --platform "$platform"
-}
-
-# Determine which platforms need data
-if [ "$TARGET" = "arduino" ]; then
-    : # no vendor data needed
-elif [ "$TARGET" = "all" ] || [ "$TARGET" = "enabled" ]; then
-    platforms=$(python3 -c "
-import json
-with open('$CONFIG_FILE') as f:
-    config = json.load(f)
-for key, plat in config['platforms'].items():
-    if '$TARGET' == 'all' or plat.get('enabled'):
-        print(key)
-")
-    for p in $platforms; do
-        download_data "$p"
-    done
-else
-    download_data "$TARGET"
-fi
-
 # --- Setup Python venv ---
 if [ ! -d "$VENV_DIR" ]; then
     echo "Creating Python virtual environment..."

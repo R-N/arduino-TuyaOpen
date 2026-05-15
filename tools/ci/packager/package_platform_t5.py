@@ -400,8 +400,6 @@ class PackagePlatformT5(PackagePlatform):
         if not self.build_platform_t5():
             return False
 
-        self.update_ci_data()
-
         output_tmp_path = os.path.join(self.package_info.output_path, "tmp", self.package_info.name)
         if os.path.exists(output_tmp_path):
             shutil.rmtree(output_tmp_path)
@@ -491,65 +489,3 @@ class PackagePlatformT5(PackagePlatform):
 
         return True
 
-    def update_ci_data(self):
-        """Update ci-data with latest build artifacts (bootloader, tuyaboot, CP bin, LD script).
-
-        Artifacts are extracted from the post-build package directory:
-        t5_os/build/bk7258/tuya_app/package/tmp/
-        """
-        packager_tools_dst = os.path.join(self.data_path, "packager-tools")
-        package_tmp_path = os.path.join(
-            self.vendor_path, "t5_os", "build", "bk7258", "tuya_app", "package", "tmp"
-        )
-
-        # Bootloader
-        bootloader_src = os.path.join(package_tmp_path, "bootloader.bin")
-        if os.path.exists(bootloader_src):
-            dst = os.path.join(packager_tools_dst, "T5_bootloader.bin")
-            shutil.copy2(bootloader_src, dst)
-            with open(dst, "rb") as f:
-                md5 = hashlib.md5(f.read()).hexdigest()
-            logging.info(f"Updated ci-data: T5_bootloader.bin ({os.path.getsize(dst)} bytes, md5={md5})")
-        else:
-            logging.error(f"T5 bootloader not found: {bootloader_src}")
-
-        # TuyaBoot
-        tuyaboot_src = os.path.join(package_tmp_path, "tuyaboot.bin")
-        if os.path.exists(tuyaboot_src):
-            dst = os.path.join(packager_tools_dst, "T5_tuyaboot.bin")
-            shutil.copy2(tuyaboot_src, dst)
-            with open(dst, "rb") as f:
-                md5 = hashlib.md5(f.read()).hexdigest()
-            logging.info(f"Updated ci-data: T5_tuyaboot.bin ({os.path.getsize(dst)} bytes, md5={md5})")
-        else:
-            logging.error(f"T5 tuyaboot not found: {tuyaboot_src}")
-
-        # CP firmware
-        cp_app_src = os.path.join(package_tmp_path, "app.bin")
-        if os.path.exists(cp_app_src):
-            dst = os.path.join(packager_tools_dst, "t5_cp_app.bin")
-            shutil.copy2(cp_app_src, dst)
-            with open(dst, "rb") as f:
-                md5 = hashlib.md5(f.read()).hexdigest()
-            info_path = os.path.join(packager_tools_dst, "t5_cp_app_info.txt")
-            with open(info_path, "w") as f:
-                f.write(f"CP Firmware Build Info\n")
-                f.write(f"=====================\n")
-                f.write(f"Size: {os.path.getsize(dst)} bytes\n")
-                f.write(f"MD5: {md5}\n")
-                f.write(f"Source: {cp_app_src}\n")
-            logging.info(f"Updated ci-data: t5_cp_app.bin ({os.path.getsize(dst)} bytes, md5={md5})")
-        else:
-            logging.error(f"CP core app.bin not found: {cp_app_src}")
-
-        # Linker script
-        ld_src = os.path.join(
-            self.vendor_path, "t5_os", "build", "bk7258", "tuya_app", "bk7258_ap",
-            "armino", "bk7258_ap", "bk7258_ap_out.ld"
-        )
-        if os.path.exists(ld_src):
-            dst = os.path.join(packager_tools_dst, "T5.ld")
-            shutil.copy2(ld_src, dst)
-            logging.info(f"Updated ci-data: T5.ld ({os.path.getsize(dst)} bytes)")
-        else:
-            logging.error(f"T5 linker script not found: {ld_src}")

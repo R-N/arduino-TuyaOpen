@@ -1,0 +1,9 @@
+-lln882h_wifi_release
+-lln882h_ble_controller_stack
+-lc_nano
+-lm
+-lnosys
+-lgcc
+-lstdc++
+-lln882hVendor
+-ltuyaos

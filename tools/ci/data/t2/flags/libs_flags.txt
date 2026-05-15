@@ -1,0 +1,6 @@
+-lrwnx
+-lblenohost
+-lstdc++
+-lt2Vendor
+-ltuyaos
+-lmftest

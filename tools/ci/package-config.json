@@ -2,7 +2,7 @@
   "package": {
     "name": "arduino_tuya_open",
     "versionFrom": "release_tag",
-    "githubOwner": "tuya",
+    "githubOwner": "maidang-xing",
     "githubRepo": "arduino-TuyaOpen",
     "globalReleaseTag": "global",
     "indexAssetName": "package_tuya_open_index.json"
@@ -17,8 +17,7 @@
       "sourceRepo": "https://github.com/tuya/tuyaopen.git",
       "sourceBranch": "master",
       "buildApp": "apps/tuya_cloud/switch_demo",
-      "archiveType": "tar.bz2",
-      "dataAsset": "ci-data-t2.tar.gz"
+      "archiveType": "tar.bz2"
     },
     "t3": {
       "enabled": false,
@@ -29,8 +28,7 @@
       "sourceRepo": "https://github.com/tuya/tuyaopen.git",
       "sourceBranch": "master",
       "buildApp": "apps/tuya_cloud/switch_demo",
-      "archiveType": "tar.bz2",
-      "dataAsset": "ci-data-t3.tar.gz"
+      "archiveType": "tar.bz2"
     },
     "t5": {
       "enabled": true,
@@ -41,8 +39,7 @@
       "sourceRepo": "https://github.com/tuya/TuyaOpen.git",
       "sourceBranch": "master",
       "buildApp": "apps/tuya.ai/your_chat_bot",
-      "archiveType": "tar.bz2",
-      "dataAsset": "ci-data-t5.tar.gz"
+      "archiveType": "tar.bz2"
     },
     "ln882h": {
       "enabled": false,
@@ -53,8 +50,7 @@
       "sourceRepo": "https://github.com/tuya/tuyaopen.git",
       "sourceBranch": "master",
       "buildApp": "apps/tuya_cloud/switch_demo",
-      "archiveType": "tar.bz2",
-      "dataAsset": "ci-data-ln882h.tar.gz"
+      "archiveType": "tar.bz2"
     },
     "esp32": {
       "enabled": false,
@@ -65,8 +61,7 @@
       "sourceRepo": "https://github.com/tuya/tuyaopen.git",
       "sourceBranch": "master",
       "buildApp": "apps/tuya_cloud/switch_demo",
-      "archiveType": "tar.bz2",
-      "dataAsset": "ci-data-esp32.tar.gz"
+      "archiveType": "tar.bz2"
     }
   }
 }
