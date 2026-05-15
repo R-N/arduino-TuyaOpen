@@ -2,7 +2,7 @@
   "package": {
     "name": "arduino_tuya_open",
     "versionFrom": "release_tag",
-    "githubOwner": "maidang-xing",
+    "githubOwner": "tuya",
     "githubRepo": "arduino-TuyaOpen",
     "globalReleaseTag": "global",
     "indexAssetName": "package_tuya_open_index.json"
