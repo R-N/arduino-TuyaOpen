@@ -1,0 +1,500 @@
+name: Release CI/CD
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to package and test (e.g. 1.2.5)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  ARDUINO_CLI_VERSION: "1.2.2"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # ============================================================
+  # Stage 1: Prepare - parse config, download global index, generate matrix
+  # ============================================================
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.tag.outputs.release_tag }}
+      vendor_matrix: ${{ steps.matrix.outputs.vendor_matrix }}
+      has_vendors: ${{ steps.matrix.outputs.has_vendors }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="${{ github.event.inputs.release_tag }}"
+          fi
+          # Validate tag format (x.y.z)
+          if ! echo "$TAG" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Invalid tag format: $TAG (expected x.y.z)"
+            exit 1
+          fi
+          echo "release_tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Release tag: $TAG"
+
+      - name: Download current global index
+        run: |
+          OWNER=$(jq -r '.package.githubOwner' tools/ci/package-config.json)
+          REPO=$(jq -r '.package.githubRepo' tools/ci/package-config.json)
+          GLOBAL_TAG=$(jq -r '.package.globalReleaseTag' tools/ci/package-config.json)
+          INDEX_NAME=$(jq -r '.package.indexAssetName' tools/ci/package-config.json)
+
+          echo "Downloading ${INDEX_NAME} from ${OWNER}/${REPO} release ${GLOBAL_TAG}..."
+          gh release download "$GLOBAL_TAG" \
+            --repo "${OWNER}/${REPO}" \
+            --pattern "$INDEX_NAME" \
+            --output global_index.json \
+            --clobber || {
+              echo "::warning::Could not download global index, will use package.json as fallback"
+              cp package.json global_index.json
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate vendor build matrix
+        id: matrix
+        run: |
+          MATRIX=$(python3 -c "
+          import json, sys
+          with open('tools/ci/package-config.json') as f:
+              config = json.load(f)
+          enabled = []
+          for key, plat in config['platforms'].items():
+              if plat.get('enabled', False):
+                  enabled.append({
+                      'platform': key,
+                      'toolName': plat['toolName'],
+                      'version': plat['version'],
+                      'chip': plat['chip'],
+                      'sourceRepo': plat['sourceRepo'],
+                      'sourceBranch': plat['sourceBranch'],
+                      'archiveType': plat.get('archiveType', 'tar.bz2'),
+                  })
+          if enabled:
+              print(json.dumps({'include': enabled}))
+          else:
+              print('{}')
+          ")
+          echo "vendor_matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          if [ "$MATRIX" = "{}" ]; then
+            echo "has_vendors=false" >> "$GITHUB_OUTPUT"
+            echo "No enabled vendor platforms"
+          else
+            echo "has_vendors=true" >> "$GITHUB_OUTPUT"
+            echo "Vendor matrix: $MATRIX"
+          fi
+
+      - name: Upload global index as artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: global-index
+          path: global_index.json
+          retention-days: 1
+
+  # ============================================================
+  # Stage 2: Pack Arduino core
+  # ============================================================
+  pack-arduino:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository at release tag
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare.outputs.release_tag }}
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Package Arduino core
+        run: |
+          TAG="${{ needs.prepare.outputs.release_tag }}"
+          python tools/ci/package_release.py \
+            --version "$TAG" \
+            --target arduino \
+            --checkout-path "${{ github.workspace }}" \
+            --output "${{ runner.temp }}/arduino-output"
+
+      - name: Upload Arduino artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: arduino-core
+          path: |
+            ${{ runner.temp }}/arduino-output/arduino_tuya_open-*.zip
+            ${{ runner.temp }}/arduino-output/manifest.json
+          retention-days: 3
+
+  # ============================================================
+  # Stage 3: Pack vendor SDKs (parallel matrix)
+  # ============================================================
+  pack-vendor:
+    needs: prepare
+    if: needs.prepare.outputs.has_vendors == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare.outputs.vendor_matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq python3-venv > /dev/null
+          pip install -q -r tools/ci/requirements.txt
+
+      - name: Cache tuyaopen clone
+        uses: actions/cache@v5
+        with:
+          path: output/${{ matrix.toolName }}
+          key: tuyaopen-${{ matrix.platform }}-${{ matrix.sourceBranch }}-${{ github.run_id }}
+          restore-keys: |
+            tuyaopen-${{ matrix.platform }}-${{ matrix.sourceBranch }}-
+
+      - name: Package vendor SDK - ${{ matrix.platform }}
+        run: |
+          TAG="${{ needs.prepare.outputs.release_tag }}"
+          python tools/ci/package_release.py \
+            --version "$TAG" \
+            --target "${{ matrix.platform }}" \
+            --output "${{ github.workspace }}/output"
+        timeout-minutes: 120
+
+      - name: Upload vendor artifact - ${{ matrix.platform }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: vendor-${{ matrix.platform }}
+          path: |
+            output/${{ matrix.toolName }}-*.tar.bz2
+            output/manifest.json
+          retention-days: 3
+
+  # ============================================================
+  # Stage 4: Upload all artifacts to the Release
+  # ============================================================
+  upload-release-assets:
+    needs: [prepare, pack-arduino, pack-vendor]
+    if: >
+      always() &&
+      needs.pack-arduino.result == 'success' &&
+      (needs.pack-vendor.result == 'success' || needs.pack-vendor.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: artifacts
+
+      - name: Merge manifests and upload to Release
+        run: |
+          TAG="${{ needs.prepare.outputs.release_tag }}"
+          mkdir -p upload
+
+          # Collect all archives
+          find artifacts -name "*.zip" -o -name "*.tar.bz2" | while read f; do
+            cp "$f" upload/
+          done
+
+          # Merge manifests
+          python3 -c "
+          import json, glob, os
+          merged = {'version': '$TAG', 'artifacts': []}
+          seen = set()
+          for mf in glob.glob('artifacts/*/manifest.json'):
+              with open(mf) as f:
+                  data = json.load(f)
+              for a in data.get('artifacts', []):
+                  if a['name'] not in seen:
+                      seen.add(a['name'])
+                      merged['artifacts'].append(a)
+          with open('upload/manifest.json', 'w') as f:
+              json.dump(merged, f, indent=2)
+          print(f'Merged {len(merged[\"artifacts\"])} artifacts')
+          "
+
+          # Upload to Release
+          echo "Uploading assets to release $TAG..."
+          for f in upload/*.zip upload/*.tar.bz2; do
+            [ -f "$f" ] || continue
+            echo "  Uploading $(basename $f)..."
+            gh release upload "$TAG" "$f" --clobber
+          done
+
+          echo "Upload complete"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload merged manifest
+        uses: actions/upload-artifact@v5
+        with:
+          name: release-manifest
+          path: upload/manifest.json
+          retention-days: 3
+
+  # ============================================================
+  # Stage 5: Generate temporary index and run compile test
+  # ============================================================
+  generate-test-index:
+    needs: [prepare, upload-release-assets]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Download global index
+        uses: actions/download-artifact@v5
+        with:
+          name: global-index
+          path: .
+
+      - name: Download release manifest
+        uses: actions/download-artifact@v5
+        with:
+          name: release-manifest
+          path: .
+
+      - name: Generate test index
+        run: |
+          TAG="${{ needs.prepare.outputs.release_tag }}"
+          OWNER=$(jq -r '.package.githubOwner' tools/ci/package-config.json)
+          REPO=$(jq -r '.package.githubRepo' tools/ci/package-config.json)
+
+          python tools/ci/generate_index_json.py \
+            --base-index global_index.json \
+            --manifest manifest.json \
+            --version "$TAG" \
+            --config tools/ci/package-config.json \
+            --github-owner "$OWNER" \
+            --github-repo "$REPO" \
+            --output package_tuya_open_index.json
+
+      - name: Validate test index
+        run: |
+          TAG="${{ needs.prepare.outputs.release_tag }}"
+          python tools/ci/validate_index.py \
+            --index package_tuya_open_index.json \
+            --version "$TAG" \
+            --manifest manifest.json
+
+      - name: Upload test index
+        uses: actions/upload-artifact@v5
+        with:
+          name: test-index
+          path: package_tuya_open_index.json
+          retention-days: 3
+
+  # ============================================================
+  # Stage 6: Build compile matrix and run compile tests (Windows)
+  # ============================================================
+  get-boards:
+    needs: [prepare, generate-test-index]
+    runs-on: windows-latest
+    outputs:
+      matrix: ${{ steps.parse.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Build compile matrix from boards.txt
+        id: parse
+        run: |
+          $boardChipMap = @{}
+          Get-Content boards.txt | ForEach-Object {
+            if ($_ -match '^([^#][A-Za-z0-9_]+)\.build\.chip=(.+)$') {
+              $boardChipMap[$Matches[1]] = $Matches[2].Trim()
+            }
+          }
+
+          $repoRoot = (Get-Location).Path -replace '\\','/'
+          $allSketches = Get-ChildItem -Path "libraries" -Filter "*.ino" -Recurse | ForEach-Object {
+            $rel = $_.FullName -replace '\\','/'
+            $rel.Substring($repoRoot.Length + 1)
+          }
+
+          $matrix = @()
+          foreach ($board in ($boardChipMap.Keys | Sort-Object)) {
+            $chip = $boardChipMap[$board]
+            if ($chip -eq "T5") {
+              $sketches = $allSketches -join ";"
+            } else {
+              $sketches = "libraries/AIcomponents/examples/00_IoT_SimpleExample/00_IoT_SimpleExample.ino"
+            }
+            $matrix += @{ board = $board; sketches = $sketches }
+          }
+
+          $json = ConvertTo-Json -Compress @{ include = $matrix }
+          echo "matrix=$json" >> $env:GITHUB_OUTPUT
+          echo "Total board jobs: $($matrix.Count)"
+        shell: pwsh
+
+  compile-test:
+    needs: [prepare, generate-test-index, get-boards]
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.get-boards.outputs.matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Download test index
+        uses: actions/download-artifact@v5
+        with:
+          name: test-index
+          path: .
+
+      - name: Setup arduino-cli
+        run: |
+          $cliVersion = $env:ARDUINO_CLI_VERSION
+          Invoke-WebRequest -Uri "https://downloads.arduino.cc/arduino-cli/arduino-cli_${cliVersion}_Windows_64bit.zip" -OutFile "arduino-cli.zip"
+          Expand-Archive -Path "arduino-cli.zip" -DestinationPath "$env:USERPROFILE\arduino-cli"
+          echo "$env:USERPROFILE\arduino-cli" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+        shell: pwsh
+
+      - name: Install tuya_open core from test index
+        run: |
+          $pkgJson = (Resolve-Path "package_tuya_open_index.json").Path -replace '\\','/'
+          $pkgUrl = "file:///$pkgJson"
+          arduino-cli config init --overwrite 2>&1 | Out-Null
+          arduino-cli config add board_manager.additional_urls $pkgUrl
+          arduino-cli core update-index 2>&1 | Out-Null
+          if ($LASTEXITCODE -ne 0) { Write-Error "Failed to update core index."; exit 1 }
+          arduino-cli core install tuya_open:tuya_open 2>&1 | Out-Null
+          if ($LASTEXITCODE -ne 0) { Write-Error "Failed to install tuya_open core."; exit 1 }
+          $installedStr = (arduino-cli core list) -join "`n"
+          if ($installedStr -notmatch 'tuya_open') { Write-Error "tuya_open core not found."; exit 1 }
+          echo "tuya_open core installed successfully from test index"
+        shell: pwsh
+
+      - name: Compile sketches for ${{ matrix.board }}
+        run: |
+          $fqbn = "tuya_open:tuya_open:${{ matrix.board }}"
+          $sketches = "${{ matrix.sketches }}" -split ";"
+          $total = $sketches.Count
+          $failed = @()
+          $failedLogs = @{}
+          $i = 0
+          foreach ($sketch in $sketches) {
+            $i++
+            echo "[$i/$total] Compiling: $sketch"
+            $output = arduino-cli compile --clean --fqbn $fqbn $sketch 2>&1
+            if ($LASTEXITCODE -ne 0) {
+              $failed += $sketch
+              $failedLogs[$sketch] = $output -join "`n"
+              echo "::error::Compilation failed: $sketch"
+            }
+          }
+          if ($failed.Count -gt 0) {
+            foreach ($s in $failed) {
+              echo "::group::Error log: $s"
+              echo $failedLogs[$s]
+              echo "::endgroup::"
+            }
+            Write-Error "$($failed.Count)/$total sketch(es) failed for ${{ matrix.board }}"
+            exit 1
+          }
+          echo "All $total sketch(es) compiled successfully for ${{ matrix.board }}"
+        shell: pwsh
+
+  # ============================================================
+  # Stage 7: Upload index to version release
+  # ============================================================
+  publish-index:
+    needs: [prepare, generate-test-index, get-boards, compile-test]
+    runs-on: ubuntu-latest
+    if: needs.compile-test.result == 'success'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Download test index
+        uses: actions/download-artifact@v5
+        with:
+          name: test-index
+          path: .
+
+      - name: Calculate index checksum
+        id: checksum
+        run: |
+          SHA256=$(sha256sum package_tuya_open_index.json | cut -d' ' -f1)
+          echo "local_sha256=$SHA256" >> "$GITHUB_OUTPUT"
+          echo "Local index SHA-256: $SHA256"
+
+      - name: Upload index to version release
+        run: |
+          TAG="${{ needs.prepare.outputs.release_tag }}"
+          INDEX_NAME=$(jq -r '.package.indexAssetName' tools/ci/package-config.json)
+
+          echo "Uploading ${INDEX_NAME} to release ${TAG}..."
+          gh release upload "$TAG" \
+            "package_tuya_open_index.json#${INDEX_NAME}" \
+            --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify uploaded index
+        run: |
+          TAG="${{ needs.prepare.outputs.release_tag }}"
+          INDEX_NAME=$(jq -r '.package.indexAssetName' tools/ci/package-config.json)
+
+          gh release download "$TAG" \
+            --pattern "$INDEX_NAME" \
+            --output verify_index.json \
+            --clobber
+
+          REMOTE_SHA256=$(sha256sum verify_index.json | cut -d' ' -f1)
+          LOCAL_SHA256="${{ steps.checksum.outputs.local_sha256 }}"
+
+          if [ "$REMOTE_SHA256" = "$LOCAL_SHA256" ]; then
+            echo "Index verification passed (SHA-256: $REMOTE_SHA256)"
+          else
+            echo "::error::Index verification FAILED! Local=$LOCAL_SHA256, Remote=$REMOTE_SHA256"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Workflow summary
+        if: always()
+        run: |
+          TAG="${{ needs.prepare.outputs.release_tag }}"
+          OWNER=$(jq -r '.package.githubOwner' tools/ci/package-config.json)
+          REPO=$(jq -r '.package.githubRepo' tools/ci/package-config.json)
+
+          cat >> "$GITHUB_STEP_SUMMARY" << EOF
+          ## Release CI/CD Summary
+
+          **Release tag:** \`${TAG}\`
+          **Repository:** ${OWNER}/${REPO}
+
+          ### Artifacts uploaded to release ${TAG}
+          $(gh release view "$TAG" --json assets --jq '.assets[].name' 2>/dev/null | sed 's/^/- /' || echo "- (could not list)")
+
+          ### Package index
+          - SHA-256: \`${{ steps.checksum.outputs.local_sha256 }}\`
+          - To publish globally, manually upload \`${INDEX_NAME}\` from release \`${TAG}\` to the \`global\` release.
+          EOF
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

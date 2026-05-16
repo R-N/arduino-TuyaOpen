@@ -121,6 +121,6 @@ void tuya_app_main(void)
     __asm("BL __libc_init_array");
 #endif
 
-    THREAD_CFG_T thrd_param = {1024 * 8, THREAD_PRIO_1, thread_name}; // Increased stack size for C++
+    THREAD_CFG_T thrd_param = {1024 * 4, THREAD_PRIO_1, thread_name}; // Increased stack size for C++
     tal_thread_create_and_start(&arduino_thrd_hdl, NULL, NULL, ArduinoThread, NULL, &thrd_param);
 }

@@ -1,0 +1,5 @@
+CP Firmware Build Info
+=====================
+Size: 966100 bytes
+MD5: 07a15e60b53679274ac3ff29b3aaf572
+Source: /home/runner/work/arduino-TuyaOpen/arduino-TuyaOpen/output/vendor-T5/platform/T5AI/t5_os/build/bk7258/tuya_app/package/tmp/app.bin

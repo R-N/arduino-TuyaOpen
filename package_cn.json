@@ -12,6 +12,86 @@
         {
           "name": "Tuya Open",
           "architecture": "tuya_open",
+          "version": "1.2.4",
+          "category": "Contributed",
+          "help": {
+            "online": ""
+          },
+          "url": "https://images.tuyacn.com/rms-static/d7c615a0-4b86-11f1-8d53-258e63d3fe0e-1778317794298.zip?tyName=arduino_tuya_open-1.2.4.zip",
+          "archiveFileName": "arduino_tuya_open-1.2.4.zip",
+          "size": "625200",
+          "checksum": "SHA-256:e0a324959e0b2b22998f640ea9637abe37188ae21403f29551f22037f2f72989",
+          "help": {
+            "online": ""
+          },
+          "boards": [
+            {
+              "name": "t2"
+            },
+            {
+              "name": "t3"
+            },
+            {
+              "name": "t5"
+            },
+            {
+              "name": "ln882h"
+            },
+            {
+              "name": "esp32"
+            }
+          ],
+          "toolsDependencies": [
+            {
+              "packager": "tuya_open",
+              "name": "gcc-arm-none-eabi",
+              "version": "10.3"
+            },
+            {
+              "packager": "tuya_open",
+              "name": "xtensa-esp-elf",
+              "version": "13.2.0"
+            },
+            {
+              "packager": "tuya_open",
+              "name": "vendor-t2",
+              "version": "1.0.2"
+            },
+            {
+              "packager": "tuya_open",
+              "name": "vendor-t3",
+              "version": "0.0.4"
+            },
+            {
+              "packager": "tuya_open",
+              "name": "vendor-T5",
+              "version": "0.0.9"
+            },
+            {
+              "packager": "tuya_open",
+              "name": "vendor-ln882h",
+              "version": "0.0.2"
+            },
+            {
+              "packager": "tuya_open",
+              "name": "vendor-esp32",
+              "version": "0.0.6"
+            },
+            {
+              "packager": "tuya_open",
+              "name": "env-python",
+              "version": "3.12.4"
+            },
+            {
+              "packager": "tuya_open",
+              "name": "tyutool",
+              "version": "2.1.0"
+            }
+          ]
+        },
+        {
+          "name": "Tuya Open",
+          "architecture": "tuya_open",
           "version": "1.2.3",
           "category": "Contributed",
           "help": {
@@ -75,7 +155,7 @@
             {
               "packager": "tuya_open",
               "name": "vendor-esp32",
-              "version": "0.0.4"
+              "version": "0.0.5"
             },
             {
               "packager": "tuya_open",
@@ -1575,6 +1655,40 @@
         },
         {
           "name": "vendor-T5",
+          "version": "0.0.9",
+          "systems": [
+            {
+              "host": "x86_64-linux-gnu",
+              "url": "https://images.tuyacn.com/rms-static/cb096f10-4b86-11f1-95db-cfd3b8132c07-1778317772929.tar.bz2?tyName=vendor-T5-0.0.9.tar.bz2",
+              "archiveFileName": "vendor-T5-0.0.9.tar.bz2",
+              "size": "102513580",
+              "checksum": "SHA-256:f0e19b65f97df37f0c8555490a1e76340103f40e0e50d2c81d19d5e34fd4cae9"
+            },
+            {
+              "host": "x86_64-cygwin",
+              "url": "https://images.tuyacn.com/rms-static/cb096f10-4b86-11f1-95db-cfd3b8132c07-1778317772929.tar.bz2?tyName=vendor-T5-0.0.9.tar.bz2",
+              "archiveFileName": "vendor-T5-0.0.9.tar.bz2",
+              "size": "102513580",
+              "checksum": "SHA-256:f0e19b65f97df37f0c8555490a1e76340103f40e0e50d2c81d19d5e34fd4cae9"
+            },
+            {
+              "host": "arm64-apple-darwin",
+              "url": "https://images.tuyacn.com/rms-static/cb096f10-4b86-11f1-95db-cfd3b8132c07-1778317772929.tar.bz2?tyName=vendor-T5-0.0.9.tar.bz2",
+              "archiveFileName": "vendor-T5-0.0.9.tar.bz2",
+              "size": "102513580",
+              "checksum": "SHA-256:f0e19b65f97df37f0c8555490a1e76340103f40e0e50d2c81d19d5e34fd4cae9"
+            },
+            {
+              "host": "x86_64-apple-darwin",
+              "url": "https://images.tuyacn.com/rms-static/cb096f10-4b86-11f1-95db-cfd3b8132c07-1778317772929.tar.bz2?tyName=vendor-T5-0.0.9.tar.bz2",
+              "archiveFileName": "vendor-T5-0.0.9.tar.bz2",
+              "size": "102513580",
+              "checksum": "SHA-256:f0e19b65f97df37f0c8555490a1e76340103f40e0e50d2c81d19d5e34fd4cae9"
+            }
+          ]
+        },
+        {
+          "name": "vendor-T5",
           "version": "0.0.8",
           "systems": [
             {
@@ -1915,33 +2029,67 @@
         },
         {
           "name": "vendor-esp32",
+          "version": "0.0.6",
+          "systems": [
+            {
+              "host": "x86_64-linux-gnu",
+              "url": "https://images.tuyacn.com/rms-static/f039a2d0-4b97-11f1-95db-cfd3b8132c07-1778325136765.tar.bz2?tyName=vendor-esp32-0.0.6.tar.bz2",
+              "archiveFileName": "vendor-esp32-0.0.6.tar.bz2",
+              "size": "202773670",
+              "checksum": "SHA-256:4b8997143a664cf23b436f119e32bc087b7284b9e525835eb2821cd5395f6f85"
+            },
+            {
+              "host": "x86_64-cygwin",
+              "url": "https://images.tuyacn.com/rms-static/f039a2d0-4b97-11f1-95db-cfd3b8132c07-1778325136765.tar.bz2?tyName=vendor-esp32-0.0.6.tar.bz2",
+              "archiveFileName": "vendor-esp32-0.0.6.tar.bz2",
+              "size": "202773670",
+              "checksum": "SHA-256:4b8997143a664cf23b436f119e32bc087b7284b9e525835eb2821cd5395f6f85"
+            },
+            {
+              "host": "arm64-apple-darwin",
+              "url": "https://images.tuyacn.com/rms-static/f039a2d0-4b97-11f1-95db-cfd3b8132c07-1778325136765.tar.bz2?tyName=vendor-esp32-0.0.6.tar.bz2",
+              "archiveFileName": "vendor-esp32-0.0.6.tar.bz2",
+              "size": "202773670",
+              "checksum": "SHA-256:4b8997143a664cf23b436f119e32bc087b7284b9e525835eb2821cd5395f6f85"
+            },
+            {
+              "host": "x86_64-apple-darwin",
+              "url": "https://images.tuyacn.com/rms-static/f039a2d0-4b97-11f1-95db-cfd3b8132c07-1778325136765.tar.bz2?tyName=vendor-esp32-0.0.6.tar.bz2",
+              "archiveFileName": "vendor-esp32-0.0.6.tar.bz2",
+              "size": "202773670",
+              "checksum": "SHA-256:4b8997143a664cf23b436f119e32bc087b7284b9e525835eb2821cd5395f6f85"
+            }
+          ]
+        },
+        {
+          "name": "vendor-esp32",
           "version": "0.0.5",
           "systems": [
             {
               "host": "x86_64-linux-gnu",
               "url": "https://images.tuyacn.com/rms-static/ad0638c0-3337-11f1-bc69-dd9d99b0210c-1775644964428.tar.bz2?tyName=vendor-esp32-0.0.5.tar.bz2",
-              "archiveFileName": "vendor-esp32-0.0.4.tar.bz2",
+              "archiveFileName": "vendor-esp32-0.0.5.tar.bz2",
               "size": "202800279",
               "checksum": "SHA-256:f15b23f362ac8876a3b068dc7eb491459c59f45867bf7bd412866cd8b952738f"
             },
             {
               "host": "x86_64-cygwin",
               "url": "https://images.tuyacn.com/rms-static/ad0638c0-3337-11f1-bc69-dd9d99b0210c-1775644964428.tar.bz2?tyName=vendor-esp32-0.0.5.tar.bz2",
-              "archiveFileName": "vendor-esp32-0.0.4.tar.bz2",
+              "archiveFileName": "vendor-esp32-0.0.5.tar.bz2",
               "size": "202800279",
               "checksum": "SHA-256:f15b23f362ac8876a3b068dc7eb491459c59f45867bf7bd412866cd8b952738f"
             },
             {
               "host": "arm64-apple-darwin",
               "url": "https://images.tuyacn.com/rms-static/ad0638c0-3337-11f1-bc69-dd9d99b0210c-1775644964428.tar.bz2?tyName=vendor-esp32-0.0.5.tar.bz2",
-              "archiveFileName": "vendor-esp32-0.0.4.tar.bz2",
+              "archiveFileName": "vendor-esp32-0.0.5.tar.bz2",
               "size": "202800279",
               "checksum": "SHA-256:f15b23f362ac8876a3b068dc7eb491459c59f45867bf7bd412866cd8b952738f"
             },
             {
               "host": "x86_64-apple-darwin",
               "url": "https://images.tuyacn.com/rms-static/ad0638c0-3337-11f1-bc69-dd9d99b0210c-1775644964428.tar.bz2?tyName=vendor-esp32-0.0.5.tar.bz2",
-              "archiveFileName": "vendor-esp32-0.0.4.tar.bz2",
+              "archiveFileName": "vendor-esp32-0.0.5.tar.bz2",
               "size": "202800279",
               "checksum": "SHA-256:f15b23f362ac8876a3b068dc7eb491459c59f45867bf7bd412866cd8b952738f"
             }
