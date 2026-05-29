@@ -24,6 +24,7 @@
 #undef accept
 #undef read
 #undef write
+#undef INADDR_NONE
 #include "WiFiServer.h"
 #include <lwip/netdb.h>
 #include "tal_network.h"
@@ -167,4 +168,3 @@ void WiFiServer::close(){
 void WiFiServer::stop(){
   end();
 }
-

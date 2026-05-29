@@ -24,6 +24,7 @@
 #undef accept
 #undef read
 #undef write
+#undef INADDR_NONE
 
 #include <Arduino.h>
 #include "WiFiUdp.h"

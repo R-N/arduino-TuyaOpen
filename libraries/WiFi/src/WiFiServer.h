@@ -36,7 +36,7 @@ class WiFiServer : public Server {
     bool startAcceptTask();
     WiFiClient available();
     WiFiClient accept(){return available();}
-    bool begin( ){ return begin(0); };
+    void begin( ){ begin(0); };
     bool begin(uint16_t port=0);
     bool begin(uint16_t port, int reuse_enable);
     void setNoDelay(bool nodelay);
