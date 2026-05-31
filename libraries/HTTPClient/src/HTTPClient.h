@@ -14,6 +14,7 @@ public:
     ~HTTPClient();
 
     bool begin(String url);
+    void setInsecure() { _tls_no_verify = true; }
     http_client_status_t GET  (http_client_header_t *headers,uint8_t headers_length,const uint8_t *ca, size_t ca_len, http_client_response_t *response);
     http_client_status_t POST (http_client_header_t *headers,uint8_t  headers_length, const uint8_t *ca, size_t ca_len, const uint8_t *body, http_client_response_t *response);
     http_client_status_t PUT  (http_client_header_t *headers,uint8_t  headers_length, const uint8_t *ca, size_t ca_len, const uint8_t *body, http_client_response_t *response);
@@ -25,6 +26,7 @@ protected:
     uint16_t _port = 0;
     String _path;
     String _protocol;
+    bool _tls_no_verify = false;
     int sendRequest(char * method ,const uint8_t *body, http_client_response_t *response);
     bool beginInternal(String url);
 };
