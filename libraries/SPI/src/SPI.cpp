@@ -162,10 +162,10 @@ uint8_t SPIClassTuyaOpen::transfer(uint8_t data)
 
   rt = tkl_spi_transfer(_port, static_cast<void*>(&data), static_cast<void*>(&out), 1);
   if (OPRT_OK == rt) {
-    return 0;
+    return out;
   }
 
-  return out;
+  return 0;
 }
 
 uint16_t SPIClassTuyaOpen::transfer16(uint16_t data)
@@ -176,9 +176,9 @@ uint16_t SPIClassTuyaOpen::transfer16(uint16_t data)
 
   rt = tkl_spi_transfer(_port, static_cast<void*>(&data), static_cast<void*>(&out), 2);
   if (OPRT_OK == rt) {
-    return 0;
+    return out;
   }
-  return out;
+  return 0;
 }
 
 void SPIClassTuyaOpen::transfer(void *buf, size_t count)
@@ -189,7 +189,7 @@ void SPIClassTuyaOpen::transfer(void *buf, size_t count)
   // PR_DEBUG("irq_enable");
 #endif
   // PR_DEBUG("send: %d", count);
-  tkl_spi_send(_port, buf, count);
+  tkl_spi_transfer(_port, buf, buf, count);
 }
 
 SPIClassTuyaOpen SPI(TUYA_SPI_NUM_0);
