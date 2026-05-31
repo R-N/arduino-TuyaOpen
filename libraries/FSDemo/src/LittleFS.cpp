@@ -9,8 +9,14 @@ static int mount(TUYA_FLASH_PARTITION_T partition);
 static int mount();
 
 static lfs_size_t lfs_flash_addr;
+static const esp_partition_t *lfs_esp_partition = NULL;
 static int user_provided_block_device_read(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, void *buffer, lfs_size_t size)
 {
+    if (lfs_esp_partition) {
+        esp_err_t err = esp_partition_read(lfs_esp_partition, c->block_size * block + off, buffer, size);
+        return err == ESP_OK ? LFS_ERR_OK : LFS_ERR_IO;
+    }
+
     OPERATE_RET ret = tkl_flash_read(lfs_flash_addr + c->block_size * block + off, (uint8_t*)buffer, size);
     if (OPRT_OK != ret) {
         Serial.println("user_provided_block_device_read");
@@ -26,6 +32,11 @@ static int user_provided_block_device_read(const struct lfs_config *c, lfs_block
 
 static int user_provided_block_device_prog(const struct lfs_config *c, lfs_block_t block, lfs_off_t off, const void *buffer, lfs_size_t size)
 {
+    if (lfs_esp_partition) {
+        esp_err_t err = esp_partition_write(lfs_esp_partition, c->block_size * block + off, buffer, size);
+        return err == ESP_OK ? LFS_ERR_OK : LFS_ERR_IO;
+    }
+
     OPERATE_RET ret = tkl_flash_write(lfs_flash_addr + c->block_size * block + off, (uint8_t*)buffer, size);
     if (OPRT_OK != ret) {
         Serial.println("user_provided_block_device_prog");
@@ -36,6 +47,11 @@ static int user_provided_block_device_prog(const struct lfs_config *c, lfs_block
 
 static int user_provided_block_device_erase(const struct lfs_config *c, lfs_block_t block)
 {
+    if (lfs_esp_partition) {
+        esp_err_t err = esp_partition_erase_range(lfs_esp_partition, c->block_size * block, c->block_size);
+        return err == ESP_OK ? LFS_ERR_OK : LFS_ERR_IO;
+    }
+
     OPERATE_RET ret = tkl_flash_erase(lfs_flash_addr + c->block_size * block, c->block_size);
     if (OPRT_OK != ret) {
         Serial.println("user_provided_block_device_erase");
@@ -83,6 +99,12 @@ static int mount()
 static int mount(TUYA_FLASH_PARTITION_T partition){
     
     lfs_flash_addr = partition.start_addr;
+    lfs_esp_partition = NULL;
+
+    const esp_partition_t *spiffs = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "spiffs");
+    if (spiffs && spiffs->address == partition.start_addr) {
+        lfs_esp_partition = spiffs;
+    }
 
     static struct lfs_config lfs_cfg = {0};
 
@@ -90,12 +112,9 @@ static int mount(TUYA_FLASH_PARTITION_T partition){
     lfs_cfg.prog = user_provided_block_device_prog;
     lfs_cfg.erase = user_provided_block_device_erase;
     lfs_cfg.sync = user_provided_block_device_sync;
-    lfs_cfg.read_size = partition.block_size;
-    lfs_cfg.prog_size = partition.block_size;
-    lfs_cfg.cache_size = partition.block_size;
-    // lfs_cfg.read_size = 16;
-    // lfs_cfg.prog_size = 16;
-    // lfs_cfg.cache_size = 64;
+    lfs_cfg.read_size = lfs_esp_partition ? 256 : partition.block_size;
+    lfs_cfg.prog_size = lfs_esp_partition ? 256 : partition.block_size;
+    lfs_cfg.cache_size = lfs_esp_partition ? 256 : partition.block_size;
     lfs_cfg.block_size = partition.block_size;
     lfs_cfg.block_count = partition.size / partition.block_size;
     lfs_cfg.lookahead_size = lfs_cfg.block_count / 8 + (8 - (lfs_cfg.block_count / 8));
@@ -140,15 +159,15 @@ static int mount(TUYA_FLASH_PARTITION_T partition){
         Serial.print("lfs_mount err: ");
         Serial.println(err);
 
-        // Serial.println("Mount failed, formatting...");
-    //     lfs_format(lfs, &lfs_cfg);
+        Serial.println("Mount failed, formatting...");
+        lfs_format(lfs, &lfs_cfg);
     
-    //     err = lfs_mount(lfs, &lfs_cfg);
+        err = lfs_mount(lfs, &lfs_cfg);
     
-    //     if (err < 0) {
-    //         Serial.print("Remount err: ");
-    //         Serial.println(err);
-    //     }
+        if (err < 0) {
+            Serial.print("Remount err: ");
+            Serial.println(err);
+        }
     }
     return err;
 }
@@ -260,7 +279,7 @@ TUYA_DIR FS_LITTLEFS::openDir(const char *path)
 {
     if(!ismounted)
     {
-        int ret = mount();
+        int ret = this->partition.start_addr ? mount(this->partition) : mount();
         if(ret >= 0)
             ismounted = true;
         else 
@@ -319,7 +338,7 @@ int FS_LITTLEFS:: isDirectory(const char *path)
 TUYA_FILE FS_LITTLEFS::open(const char *path)
 {
     if(!ismounted) {
-        int ret = mount();
+        int ret = this->partition.start_addr ? mount(this->partition) : mount();
         if(ret >= 0)
             ismounted = true;
         else 
@@ -334,7 +353,7 @@ TUYA_FILE FS_LITTLEFS::open(const char *path, const char* mode)
 {
     if(!ismounted)
     {
-        int ret = mount();
+        int ret = this->partition.start_addr ? mount(this->partition) : mount();
         if(ret >= 0)
             ismounted = true;
         else 
