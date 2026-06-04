@@ -128,8 +128,7 @@ static void tuya_app_thread(void *arg)
     netmgr_init(type);
 #if defined(ENABLE_WIFI) && (ENABLE_WIFI == 1)
     netcfg_args_t netcfg_args;
-    netcfg_args.type = NETCFG_TUYA_BLE;
-    netcfg_args.type |= NETCFG_TUYA_WIFI_AP;
+    netcfg_args.type = NETCFG_TUYA_WIFI_AP;
     netmgr_conn_set(NETCONN_WIFI, NETCONN_CMD_NETCFG, &netcfg_args);
 #endif
 
