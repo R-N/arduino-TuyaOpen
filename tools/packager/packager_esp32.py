@@ -65,29 +65,11 @@ def esp32_image_gen(chip_info):
                 bin_out.write(data)
                 cur_offset += len(data)
 
-        # Fill until SPIFFS
-        if cur_offset < OFFSET_SPIFFS:
-            bin_out.write(b'\xff' * (OFFSET_SPIFFS - cur_offset))
-            cur_offset = OFFSET_SPIFFS
-
-        # Jump over SPIFFS without writing
-        # end_of_spiffs = OFFSET_SPIFFS + SPIFFS_SIZE
-        # if cur_offset < end_of_spiffs:
-        #     cur_offset = end_of_spiffs
-            
-        # Fill until end of coredump
-        end_of_coredump = OFFSET_COREDUMP + COREDUMP_SIZE
-        if cur_offset < end_of_coredump:
-            bin_out.write(b'\xff' * (end_of_coredump - cur_offset))
-            cur_offset = end_of_coredump
-
+        # DO NOT pad past the app: tyutool writes contiguously from 0x0, so any 0xFF bytes here erase SPIFFS / tuya KV / factory_nvs / coredump.
         if OFFSET_END < cur_offset:
             logging.error("Final binary exceeds flash size!")
             return False
 
-        # offset = OFFSET_END
-        # bin_out.write(b'\xff' * (offset - cur_offset))
-        bin_out.write(b'\xff' * (OFFSET_END - cur_offset))
         logging.debug(f"ESP32 QIO binary: {chip_info.bin_file_QIO}")
         logging.debug("package success.")
     
