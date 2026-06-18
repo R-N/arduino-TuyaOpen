@@ -1,4 +1,5 @@
 menu.UploadSpeed=Upload Speed
+menu.PSRAM=PSRAM
 
 # --------------------------------------------------
 #                         T2                        
@@ -378,6 +379,20 @@ esp32.menu.UploadSpeed.1500000=1500000
 esp32.menu.UploadSpeed.1500000.upload.speed=1500000
 esp32.menu.UploadSpeed.2000000=2000000
 esp32.menu.UploadSpeed.2000000.upload.speed=2000000
+
+# PSRAM: "Disabled" (default) links the stock SPIRAM-disabled vendor libs.
+# "Enabled" links the SPIRAM-enabled flavor staged by build_vendor_libs.py --psram
+# (libs_psram/ + link_path_psram/) and adds -DBOARD_HAS_PSRAM plus the ESP32-classic
+# PSRAM cache-issue workaround flag to every translation unit.
+esp32.menu.PSRAM.disabled=Disabled
+esp32.menu.PSRAM.enabled=Enabled (8MB QSPI)
+# Only memory.ld/sections.ld (esp_system/ld) differ for PSRAM -> use link_path_psram.
+# Chip-static scripts (esp32.peripherals.ld, esp32.rom*.ld) are not staged into
+# link_path_psram, so esp_rom/ld + soc/ld point at the base link_path.
+esp32.menu.PSRAM.enabled.compiler.flags.libs=-L{runtime.tools.vendor-esp32.path}/libs_psram -L{runtime.tools.vendor-esp32.path}/link_path_psram/esp-idf/esp_system/ld -L{runtime.tools.vendor-esp32.path}/link_path_psram/esp-idf/components/bt/controller/lib_esp32/esp32 -L{runtime.tools.vendor-esp32.path}/link_path_psram/esp-idf/components/esp_coex/lib/esp32 -L{runtime.tools.vendor-esp32.path}/link_path_psram/esp-idf/components/esp_phy/lib/esp32 -L{runtime.tools.vendor-esp32.path}/link_path/esp-idf/components/esp_rom/esp32/ld -L{runtime.tools.vendor-esp32.path}/link_path_psram/esp-idf/components/esp_wifi/lib/esp32 -L{runtime.tools.vendor-esp32.path}/link_path/esp-idf/components/soc/esp32/ld @{runtime.tools.vendor-esp32.path}/flags/libs_flags.txt -lesp_psram
+esp32.menu.PSRAM.enabled.compiler.flags.c=@{runtime.tools.vendor-esp32.path}/flags/c_flags.txt -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue
+esp32.menu.PSRAM.enabled.compiler.flags.cpp=@{runtime.tools.vendor-esp32.path}/flags/cpp_flags.txt -DBOARD_HAS_PSRAM -mfix-esp32-psram-cache-issue
+esp32.menu.PSRAM.enabled.compiler.flags.S=@{runtime.tools.vendor-esp32.path}/flags/S_flags.txt -mfix-esp32-psram-cache-issue
 
 esp32.compiler.path={runtime.tools.xtensa-esp-elf.path}
 esp32.compiler.cmd.S={compiler.path}/bin/xtensa-esp32-elf-gcc
