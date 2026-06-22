@@ -51,6 +51,10 @@ public :
     
 protected:
     bool ismounted = false;
+    // Per-instance lfs state (opaque LfsState* defined in LittleFS.cpp). Each
+    // FS_LITTLEFS object owns its own lfs mount, so the web app (spiffs) and the
+    // user-data partition can be mounted at the same time as separate objects.
+    void *_state = nullptr;
 };
 
 
