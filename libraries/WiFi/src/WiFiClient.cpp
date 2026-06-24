@@ -102,6 +102,12 @@ private:
                 }
                 return 0;
             }
+            if(res == 0) {
+                // Orderly shutdown: the peer closed the connection (a stream
+                // recv() returns 0 only on EOF, never for "no data yet").
+                _failed = true;
+                return 0;
+            }
             _fill += res;
             return res;
         }
@@ -547,13 +553,14 @@ uint8_t WiFiClient::connected()
 {
     if (_connected || fd() >= 0) {
         uint8_t dummy;
-        int res = recv(fd(), &dummy, 0, MSG_DONTWAIT);
-        // tal_net_set_block(fd(), 0);
-        // int res = tal_net_recv(fd(), &dummy, 0);
-        // avoid unused var warning by gcc
-        (void)res;
-        // recv only sets errno if res is <= 0
-        if (res <= 0){
+        // Peek one byte (non-destructive): res==0 means the peer closed the
+        // connection (orderly shutdown). A zero-length recv() cannot reveal
+        // EOF and leaves errno stale, so a closed keep-alive socket would
+        // otherwise read as still-connected and leak its slot / lwIP socket.
+        int res = recv(fd(), &dummy, 1, MSG_DONTWAIT | MSG_PEEK);
+        if (res == 0) {
+            _connected = false;
+        } else if (res < 0){
           switch (errno) {
               case EWOULDBLOCK:
               case ENOENT: //caused by vfs
