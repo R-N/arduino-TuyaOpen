@@ -4,6 +4,16 @@
 #include "pins_arduino.h"
 #include "api/ArduinoAPI.h"
 
+// Common.h mandates the core define interrupts() / noInterrupts().
+#ifdef __cplusplus
+extern "C" {
+#endif
+void interrupts(void);
+void noInterrupts(void);
+#ifdef __cplusplus
+}
+#endif
+
 #if defined(__cplusplus) && !defined(c_plusplus)
 
 using namespace arduino;

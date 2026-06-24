@@ -1,6 +1,21 @@
 #include "Arduino.h"
 
 #include "tkl_gpio.h"
+#include "freertos/FreeRTOS.h"
+
+// Global IRQ enable/disable. ESP32 is SMP, so a portMUX spinlock gives a
+// critical section that also guards against the other core.
+static portMUX_TYPE s_irq_mux = portMUX_INITIALIZER_UNLOCKED;
+
+extern "C" void noInterrupts(void)
+{
+    portENTER_CRITICAL(&s_irq_mux);
+}
+
+extern "C" void interrupts(void)
+{
+    portEXIT_CRITICAL(&s_irq_mux);
+}
 
 void attachInterrupt(pin_size_t interruptNumber, voidFuncPtr callback, PinStatus mode)
 {
