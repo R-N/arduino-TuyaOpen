@@ -14,6 +14,8 @@ void noInterrupts(void);
 }
 #endif
 
+#include "esp32-hal-psram.h"
+
 #if defined(__cplusplus) && !defined(c_plusplus)
 
 using namespace arduino;
